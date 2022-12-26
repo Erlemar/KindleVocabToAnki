@@ -1,15 +1,14 @@
-import pandas as pd
 import streamlit as st
 
-st.set_page_config(layout="wide")
 from src.utils import get_data_from_vocab, make_more_columns
+
+st.set_page_config(layout='wide')
 
 st.title('Kindle Vocabulary to Anki converter')
 
-db = st.file_uploader("vocab.db", type="db")
+db = st.file_uploader('vocab.db', type='db')
 if db:
     # get data
-    print('db', type(db))
     data = get_data_from_vocab(db)
 
     st.dataframe(data)
@@ -33,16 +32,10 @@ if db:
     new_data = data[options].rename(columns=new_col_names)
     st.dataframe(new_data)
     st.subheader('Download options')
-    sep = st.selectbox(
-        'Select separator',
-        (';', 'Tab'))
+    sep = st.selectbox('Select separator', (';', 'Tab'))
     sep = sep if sep == ';' else '\t'
 
-    file_name = st.text_input(f'File name', 'anki_table')
+    file_name = st.text_input('File name', 'anki_table')
     st.download_button(
-        "Press to Download",
-        new_data.to_csv(index=False, sep=';'),
-        f"{file_name}.csv",
-        "text/csv",
-        key='download-csv'
+        'Press to Download', new_data.to_csv(index=False, sep=';'), f'{file_name}.csv', 'text/csv', key='download-csv'
     )

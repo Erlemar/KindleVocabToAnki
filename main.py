@@ -16,7 +16,7 @@ if db:
     st.subheader('Processed data')
 
     # limit the number of rows
-    top_n: int = st.number_input('Take top N rows', min_value=1, max_value=data.shape[0], value=10)
+    top_n: int = int(st.number_input('Take top N rows', min_value=1, max_value=data.shape[0], value=10))
     data = data[:top_n]
 
     # select the target language

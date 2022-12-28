@@ -8,26 +8,6 @@ from deep_translator import GoogleTranslator
 from stqdm import stqdm
 
 
-@st.cache(suppress_st_warning=True)
-def translate_words(data: pd.DataFrame) -> List[str]:
-    """
-    Translate the words.
-
-    # TODO write a generic function for translation and let user decide what to translate (word or/and stem)
-
-    Args:
-        data: pandas dataframe with the data
-
-    Returns:
-        the list of the translated words
-    """
-    translated_words = []
-    for _, row in stqdm(data.iterrows(), total=data.shape[0], desc='Translating...'):
-        translated = GoogleTranslator(source=row.word_lang, target='en').translate(row.word)
-        translated_words.append(translated)
-    return translated_words
-
-
 def get_data_from_vocab(db: st.runtime.uploaded_file_manager.UploadedFile) -> pd.DataFrame:
     """
     Extract the data from vocab.db and convert it into pandas DataFrame.
@@ -63,22 +43,42 @@ def get_data_from_vocab(db: st.runtime.uploaded_file_manager.UploadedFile) -> pd
     return data
 
 
-def make_more_columns(data: pd.DataFrame) -> pd.DataFrame:
+@st.cache(suppress_st_warning=True)
+def translate(data: List, lang: str) -> List[str]:
+    """
+    Translate text.
+
+    Args:
+        data: pandas dataframe with the data
+        lang: target language for translating
+
+    Returns:
+        the list of the translated words
+    """
+    translated = []
+    for text_lang, text in stqdm(data, total=len(data), desc='Translating...'):
+        translated.append(GoogleTranslator(source=text_lang, target=lang).translate(text))
+    return translated
+
+
+def make_more_columns(data: pd.DataFrame, lang: str, to_translate) -> pd.DataFrame:
     """
     Create additional columns.
 
     Args:
         data: pandas DataFrame with the data
+        lang: target language for translation
 
     Returns:
         processed data.
 
     """
-    translated_words = translate_words(data)
-
-    data['definition'] = translated_words
+    for col in to_translate:
+        data[f'translated_{col.lower()}'] = translate(
+            list(data[['word_lang', 'word']].itertuples(index=False, name=None)), lang)
 
     data['sentence_with_brackets'] = data.apply(lambda x: x.example.replace(x.word, f'{{{x.word}}}'), axis=1)
     data['sentence_with_different_brackets'] = data.apply(lambda x: x.example.replace(x.word, f'[{x.word}]'), axis=1)
-    data['sentence_with_cloze'] = data.apply(lambda x: x.example.replace(x.word, f'{{c1::{x.definition}}}'), axis=1)
+    data['sentence_with_cloze'] = data.apply(lambda x: x.example.replace(x.word, f'{{c1::{x.translated_word}}}'),
+                                             axis=1)
     return data

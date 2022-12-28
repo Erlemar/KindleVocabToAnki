@@ -1,4 +1,5 @@
 import streamlit as st
+from deep_translator import GoogleTranslator
 
 from src.utils import get_data_from_vocab, make_more_columns
 
@@ -15,10 +16,19 @@ if db:
     st.subheader('Processed data')
 
     # limit the number of rows
-    top_n = st.number_input('Take top N rows', min_value=1, max_value=data.shape[0], value=10)
+    top_n: int = st.number_input('Take top N rows', min_value=1, max_value=data.shape[0], value=10)
     data = data[:top_n]
+
+    # select the target language
+    langs_list = list(GoogleTranslator().get_supported_languages(as_dict=True).values())
+    lang = st.selectbox('Lang', options=langs_list, index=langs_list.index('en'))
+
+    to_translate = st.multiselect(
+        'What to translate (select one or multiple)',
+        ['word', 'stem', 'example'],
+        ['word'])
     # translate and create sentences
-    data = make_more_columns(data)
+    data = make_more_columns(data, lang, to_translate)
 
     options = st.multiselect('Columns to use', list(data.columns), list(data.columns))
 

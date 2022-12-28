@@ -61,7 +61,7 @@ def translate(data: List, lang: str) -> List[str]:
     return translated
 
 
-def make_more_columns(data: pd.DataFrame, lang: str, to_translate) -> pd.DataFrame:
+def make_more_columns(data: pd.DataFrame, lang: str, to_translate: List[str]) -> pd.DataFrame:
     """
     Create additional columns.
 
@@ -75,10 +75,12 @@ def make_more_columns(data: pd.DataFrame, lang: str, to_translate) -> pd.DataFra
     """
     for col in to_translate:
         data[f'translated_{col.lower()}'] = translate(
-            list(data[['word_lang', 'word']].itertuples(index=False, name=None)), lang)
+            list(data[['word_lang', 'word']].itertuples(index=False, name=None)), lang
+        )
 
     data['sentence_with_brackets'] = data.apply(lambda x: x.example.replace(x.word, f'{{{x.word}}}'), axis=1)
     data['sentence_with_different_brackets'] = data.apply(lambda x: x.example.replace(x.word, f'[{x.word}]'), axis=1)
-    data['sentence_with_cloze'] = data.apply(lambda x: x.example.replace(x.word, f'{{c1::{x.translated_word}}}'),
-                                             axis=1)
+    data['sentence_with_cloze'] = data.apply(
+        lambda x: x.example.replace(x.word, f'{{c1::{x.translated_word}}}'), axis=1
+    )
     return data

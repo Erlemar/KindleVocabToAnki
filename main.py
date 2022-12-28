@@ -23,10 +23,7 @@ if db:
     langs_list = list(GoogleTranslator().get_supported_languages(as_dict=True).values())
     lang = st.selectbox('Lang', options=langs_list, index=langs_list.index('en'))
 
-    to_translate = st.multiselect(
-        'What to translate (select one or multiple)',
-        ['word', 'stem', 'example'],
-        ['word'])
+    to_translate = st.multiselect('What to translate (select one or multiple)', ['word', 'stem', 'example'], ['word'])
     # translate and create sentences
     data = make_more_columns(data, lang, to_translate)
 

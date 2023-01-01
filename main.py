@@ -25,7 +25,7 @@ st.markdown(text, unsafe_allow_html=True)
 
 my_expander = st.expander(label='More info')
 with my_expander:
-    """
+    text = """
     The idea of this app appeared when I tried to export Kindle vocabulary to Anki using my Macbook.
     I found out that there are the following options:
     * Kindle Mate - an awesome app, but it works for Windows only;
@@ -39,6 +39,7 @@ with my_expander:
 
     If you have any feedback, issues or ideas of improvement, you can create an issue on GitHub or sent me an e-mail.
     """
+    st.markdown(text, unsafe_allow_html=True)
 
 st.subheader('Upload your kindle vocabulary file here')
 

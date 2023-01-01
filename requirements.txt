@@ -4,3 +4,4 @@ stqdm==0.0.4
 streamlit==1.16.0
 tqdm==4.64.1
 pytest==7.2.0
+altair==4.1.0

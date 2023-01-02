@@ -11,6 +11,8 @@ if 'load_state' not in st.session_state:
     st.session_state.load_state = False
 if 'translated_df' not in st.session_state:
     st.session_state.translated_df = pd.DataFrame()
+if 'loaded_data' not in st.session_state:
+    st.session_state.loaded_data = pd.DataFrame()
 text = """
     This is an app for converting kindle vocab file into a spreadsheet that can be imported into anki.\n
     You can change the app width or turn on the dark mode in the Settings using the button in the top right corner.\n
@@ -42,7 +44,8 @@ with my_expander:
     st.markdown(text, unsafe_allow_html=True)
 
 st.subheader('Upload your kindle vocabulary file here')
-
+if 'data_exists' not in st.session_state:
+    st.session_state.data_exists = False
 db = st.file_uploader('vocab.db', type='db', help='Upload the vocabulary file here')
 
 use_sample = st.button('Press the button to use a sample data')
@@ -51,12 +54,15 @@ data = pd.DataFrame
 
 if use_sample:
     data = pd.read_csv('data_example/example_data.csv')
-
-if db or use_sample:
+    st.session_state.data_exists = True
+    st.session_state.loaded_data = data
+if db or use_sample or st.session_state.data_exists:
     # use sample data or the uploaded data
-    if not use_sample:
+    if not use_sample and not st.session_state.data_exists:
         data = get_data_from_vocab(db)
-
+        st.session_state.loaded_data = data
+    elif not use_sample:
+        data = st.session_state.loaded_data
     st.subheader('Extracted data')
     text3 = """
         This is the data extracted from the Kindle vocabulary file. You can sort it by clicking on any column name.
@@ -126,7 +132,10 @@ if db or use_sample:
         data = data.loc[data['Word language'].isin(langs_from)]
 
         st.write(f'{data.shape[0]} texts will be translated')
+        st.session_state.loaded_data = data
         st.dataframe(data.reset_index(drop=True))
+    if data is None:
+        data = st.session_state.loaded_data
     translate = st.button(
         'Press the button to translate the data', on_click=make_more_columns, args=(data, lang, to_translate)
     )

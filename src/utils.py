@@ -49,7 +49,7 @@ def get_data_from_vocab(db: st.runtime.uploaded_file_manager.UploadedFile) -> pd
     return data
 
 
-@st.cache(suppress_st_warning=True)
+@st.cache_data()
 def translate(data: List, lang: str) -> List[str]:
     """
     Translate text.
@@ -68,7 +68,7 @@ def translate(data: List, lang: str) -> List[str]:
     return translated
 
 
-@st.cache(suppress_st_warning=True)
+@st.cache_data()
 def make_more_columns(data: pd.DataFrame, lang: str, to_translate: List[str]) -> pd.DataFrame:
     """
     Create additional columns.
@@ -111,7 +111,7 @@ def show_vocabulary_stats(df: pd.DataFrame) -> None:
 
     chart = (
         alt.Chart(d)
-        .mark_line(point=True, strokeWidth=1)
+        .mark_line(point=True, strokeWidth=2)
         .encode(x=alt.X('date:T', timeUnit='yearmonthdate'), y='count:Q')
         .configure_point(size=20)
         .properties(title='Number of word over time')
@@ -122,14 +122,14 @@ def show_vocabulary_stats(df: pd.DataFrame) -> None:
         df['Book title']
         .value_counts()
         .reset_index()
-        .rename(columns={'index': 'Book title', 'Book title': 'Count'})
+        # .rename(columns={'index': 'Book title', 'Book title': 'Count'})
         .head(5)
     )
 
     chart1 = (
         alt.Chart(d)
         .mark_bar()
-        .encode(y='Book title', x='Count')
+        .encode(y='Book title:N', x='count:Q')
         .properties(title='Number of words in top 5 books')
         .interactive()
     )

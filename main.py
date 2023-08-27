@@ -109,14 +109,14 @@ if db or use_sample or st.session_state.data_exists:
         )
 
         books = st.multiselect(
-            label='books to translate',
+            label='Filter by books',
             options=data['Book title'].unique(),
             default=data['Book title'].unique(),
             help='Select the books that will be translated',
         )
         data = data.loc[data['Book title'].isin(books)]
         authors = st.multiselect(
-            label='books to translate',
+            label='Filter by authors',
             options=data['Authors'].unique(),
             default=data['Authors'].unique(),
             help='Select the Authors that will be translated',
@@ -153,6 +153,7 @@ if db or use_sample or st.session_state.data_exists:
             default=['Stem', 'Word', 'Sentence'] + [col for col in translated_data.columns if 'translated' in col],
             help='Select the columns you want to keep',
         )
+        # TODO process the case when the original sentence isn't selected
 
         my_expander1 = st.expander(label='Rename columns')
         with my_expander1:
@@ -165,7 +166,13 @@ if db or use_sample or st.session_state.data_exists:
         new_data = translated_data[options].rename(columns=new_col_names)
         highlight = st.selectbox(
             label='Select highlight options',
-            options=('None', 'Replace with underscore', 'Surround with [] brackets', 'Surround with {} brackets'),
+            options=(
+                'None',
+                'Replace with underscore',
+                'Surround with [] brackets',
+                'Surround with {} brackets',
+                'Bold',
+            ),
             index=0,
             help='separator',
         )
@@ -181,6 +188,12 @@ if db or use_sample or st.session_state.data_exists:
             new_data['sentence_with_highlight'] = new_data.apply(
                 lambda x: x.Sentence.replace(x.Word, f'{{{x.Word}}}'), axis=1
             )
+        elif highlight == 'Bold':
+            new_data['sentence_with_highlight'] = new_data.apply(
+                lambda x: x.Sentence.replace(x.Word, f'<b>{x.Word}</b>'),
+                axis=1
+                # lambda x: x.Sentence.replace(x.Word, f'\033[1m{x.Word}\033[1m'), axis=1
+            )
         st.dataframe(new_data)
 
         st.subheader('Download options')
@@ -189,9 +202,12 @@ if db or use_sample or st.session_state.data_exists:
         sep = sep if sep == ';' else '\t'
 
         file_name = st.text_input('File name (without extension)', 'anki_table')
+        # TODO check file name, maybe it doesn't work. IT WORKS, but need to confirm the choice
+        # TODO check that remove header works
+
         st.download_button(
             label='Press to Download',
-            data=new_data.to_csv(index=False, sep=';', header=not keep_header),
+            data=new_data.to_csv(index=False, sep=';', header=keep_header),
             file_name=f'{file_name}.csv',
             mime='text/csv',
             key='download-csv',

@@ -1,3 +1,5 @@
+import time
+
 import pandas as pd
 import streamlit as st
 from deep_translator import GoogleTranslator
@@ -13,42 +15,40 @@ if 'translated_df' not in st.session_state:
     st.session_state.translated_df = pd.DataFrame()
 if 'loaded_data' not in st.session_state:
     st.session_state.loaded_data = pd.DataFrame()
+use_sample = None
+holder1 = st.empty()
+holder2 = st.empty()
+holder3 = st.empty()
+holder4 = st.empty()
+holder5 = st.empty()
+holder6 = st.empty()
+holder7 = st.empty()
+holder8 = st.empty()
+holder9 = st.empty()
+holder10 = st.empty()
+holder11 = st.empty()
+holder12 = st.empty()
+holder13 = st.empty()
+
 text = """
-    This is an app for converting kindle vocab file into a spreadsheet that can be imported into anki.\n
+    This is an app for converting kindle vocab file into a table that can be imported into anki.\n
     You can change the app width or turn on the dark mode in the Settings using the button in the top right corner.\n
-    To get started, you need to have vocab.db from your Kindle device at hand. If you don't know how to get it,
+    To get started, you need to have `vocab.db` file from your Kindle device at hand. If you don't know how to get it,
     here are the steps to do it:
     * connect your Kindle device to your PC/laptop by cable;
     * copy vocabulary file `Kindle/system/vocabulary/vocab.db` to your PC/laptop;
     \n
-    If you want to read more information, open the section below.
+    This app doesn't keep your data - it is saved only in cache and is cleared after the end of your session.\n
+    If you want to know more, you can read this blogpost [not written yet].
 """
-st.markdown(text, unsafe_allow_html=True)
+holder1.markdown(text, unsafe_allow_html=True)
 
-my_expander = st.expander(label='More info')
-with my_expander:
-    text = """
-    The idea of this app appeared when I tried to export Kindle vocabulary to Anki using my Macbook.
-    I found out that there are the following options:
-    * Kindle Mate - an awesome app, but it works for Windows only;
-    * Several repositories on GitHub, requiring installing them;
-    * Anki addon - great
-    * flashcards
-
-    As a result, I think I can make my own solution which is more customizable.
-
-    This app doesn't keep your data - it is saved only in cache and is cleared after the end of your session.
-
-    If you have any feedback, issues or ideas of improvement, you can create an issue on GitHub or sent me an e-mail.
-    """
-    st.markdown(text, unsafe_allow_html=True)
-
-st.subheader('Upload your kindle vocabulary file here')
+holder3.subheader('Upload your kindle vocabulary file here')
 if 'data_exists' not in st.session_state:
     st.session_state.data_exists = False
-db = st.file_uploader('vocab.db', type='db', help='Upload the vocabulary file here')
+db = holder4.file_uploader('vocab.db', type='db', help='Upload the vocabulary file here')
 
-use_sample = st.button('Press the button to use a sample data')
+use_sample = holder5.button('Press the button to use a sample data')
 
 data = pd.DataFrame
 
@@ -56,25 +56,35 @@ if use_sample:
     data = pd.read_csv('data_example/example_data.csv')
     st.session_state.data_exists = True
     st.session_state.loaded_data = data
+
 if db or use_sample or st.session_state.data_exists:
+    time.sleep(1)
     # use sample data or the uploaded data
     if not use_sample and not st.session_state.data_exists:
         data = get_data_from_vocab(db)
         st.session_state.loaded_data = data
     elif not use_sample:
         data = st.session_state.loaded_data
-    st.subheader('Extracted data')
+
+    st.session_state.extracted = True
+    holder1.empty()
+    holder2.empty()
+    holder3.empty()
+    holder4.empty()
+    holder5.empty()
+    holder6.subheader('Extracted data')
     text3 = """
         This is the data extracted from the Kindle vocabulary file. You can sort it by clicking on any column name.
     """
-    st.markdown(text3, unsafe_allow_html=True)
-    st.dataframe(data)
+    holder7.markdown(text3, unsafe_allow_html=True)
+    holder8.dataframe(data)
 
-    my_expander1 = st.expander(label='Show vocabulary statistics')
+    my_expander1 = holder9.expander(label='Show vocabulary statistics')
     with my_expander1:
         show_vocabulary_stats(data)
-    st.subheader('Define translation parameters')
-    my_expander2 = st.expander(label='Translation parameters', expanded=True)
+
+    holder10.subheader('Define translation parameters')
+    my_expander2 = holder11.expander(label='Translation parameters', expanded=True)
     with my_expander2:
         # limit the number of rows
         col1_, col2_ = st.columns(2)
@@ -131,16 +141,24 @@ if db or use_sample or st.session_state.data_exists:
         )
         data = data.loc[data['Word language'].isin(langs_from)]
 
-        st.write(f'{data.shape[0]} texts will be translated')
+        st.write(f'{data.shape[0]} texts will be translated (using Google Translate)')
         st.session_state.loaded_data = data
         st.dataframe(data.reset_index(drop=True))
     if data is None:
         data = st.session_state.loaded_data
-    translate = st.button(
-        'Press the button to translate the data', on_click=make_more_columns, args=(data, lang, to_translate)
-    )
+    translate = holder13.button('Translate', on_click=make_more_columns, args=(data, lang, to_translate))
 
     if translate or st.session_state.load_state:
+        # time.sleep(1)
+
+        holder6.empty()
+        holder7.empty()
+        holder8.empty()
+        holder9.empty()
+        holder10.empty()
+        holder11.empty()
+        holder12.empty()
+        holder13.empty()
         st.session_state.load_state = True
 
         translated_data = st.session_state.translated_df

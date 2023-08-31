@@ -3,15 +3,16 @@
 To do:
 * update all texts
 * update readme
-* don't forget to update version
-* change statistics. plot doesn't matter, as there is a max limit on the number of the words. n languages, if relevant
++ don't forget to update version
++ change statistics. plot doesn't matter, as there is a max limit on the number of the words. n languages, if relevant
 * add info that google translate is used
-* check if I can translate providing context
-* make tabs instead of one long page
+* check if I can translate providing context (GoogleTranslator(source='en', target='ru').translate('This <b>is</b> a dog'))
 * reorder default columns
 * add link to github
 
-
+TWO IDEAS:
+* use sidebar
+* hide elements
 
 This is an app to convert Kindle vocab file so that it can be imported into Anki. There are some alternatives, but this is the only Web-based version. There is no need to install anything. And it should be usable from the Kindle itself.
 
@@ -62,3 +63,8 @@ links:
 * https://www.reddit.com/r/Anki/comments/961cj8/documentation_for_creating_addons/
 * https://github.com/users/Erlemar/projects/1/views/1?filterQuery=-status%3ADone
 *
+
+    * Kindle Mate - an awesome app, but it works for Windows only;
+    * Several repositories on GitHub, requiring installing them;
+    * Anki addon - great
+    * flashcards

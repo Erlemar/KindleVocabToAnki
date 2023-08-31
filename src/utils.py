@@ -106,15 +106,21 @@ def show_vocabulary_stats(df: pd.DataFrame) -> None:
         Nothing
     """
     df['date'] = pd.to_datetime(df['Timestamp']).dt.date
-    d = df.groupby('date')['Sentence'].count().sort_index().reset_index()
+    df['Year-month'] = (
+        pd.to_datetime(df['Timestamp']).dt.year.astype(str)
+        + '-'
+        + pd.to_datetime(df['Timestamp']).dt.month.astype(str)
+    )
+    d = df.groupby('Year-month')['Sentence'].count().sort_index().reset_index()
     d['count'] = d['Sentence'].cumsum()
 
     chart = (
         alt.Chart(d)
-        .mark_line(point=True, strokeWidth=2)
-        .encode(x=alt.X('date:T', timeUnit='yearmonthdate'), y='count:Q')
+        .mark_line(point=True, strokeWidth=3)
+        .encode(x=alt.X('Year-month:T', timeUnit='yearmonth'), y='count:Q')
         .configure_point(size=20)
         .properties(title='Number of word over time')
+        .configure_point(size=50)
         .interactive()
     )
 
@@ -126,24 +132,37 @@ def show_vocabulary_stats(df: pd.DataFrame) -> None:
         .head(5)
     )
 
+    # chart1 = (
+    #     alt.Chart(d)
+    #     .mark_bar()
+    #     .encode(y=alt.Y('Book title:N').sort('-x'), x=alt.X('count:Q'), tooltip=['Book title', 'count'])
+    #     .properties(title='Number of words in top 5 books')
+    #     .interactive()
+    # )
+
     chart1 = (
         alt.Chart(d)
-        .mark_bar()
-        .encode(y='Book title:N', x='count:Q')
+        .mark_arc()
+        .encode(color=alt.Y('Book title:N'), theta=alt.X('count:Q'), tooltip=['Book title', 'count'])
         .properties(title='Number of words in top 5 books')
         .interactive()
     )
-    col1_, col2_ = st.columns(2)
-    with col1_:
-        st.altair_chart(chart)
-    with col2_:
-        st.altair_chart(chart1)
+    # col1_, col2_ = st.columns(2)
+    # with col1_:
+    st.altair_chart(chart, use_container_width=True)
+    # with col2_:
+    st.altair_chart(chart1, use_container_width=True)
 
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
     col1.metric(label='Number of words', value=df.shape[0], help='Number of unique words in the vocabulary')
     col2.metric(
         label='Number of books', value=df['Book title'].nunique(), help='Number of unique books in the vocabulary'
     )
     col3.metric(
+        label='Number of Languages',
+        value=df['Word language'].nunique(),
+        help='Number of unique languages in the vocabulary',
+    )
+    col4.metric(
         label='Number of reading days', value=df['date'].nunique(), help='Number of days with at least one word marked'
     )

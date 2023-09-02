@@ -28,7 +28,7 @@ def get_data_from_vocab(db: st.runtime.uploaded_file_manager.UploadedFile) -> pd
     cur = con.cursor()
 
     sql = """
-        SELECT WORDS.stem, WORDS.word, WORDS.lang, LOOKUPS.usage, BOOK_INFO.title, BOOK_INFO.authors, LOOKUPS.timestamp
+        SELECT WORDS.word, WORDS.stem, WORDS.lang, LOOKUPS.usage, BOOK_INFO.title, BOOK_INFO.authors, LOOKUPS.timestamp
           FROM LOOKUPS
           LEFT JOIN WORDS
             ON WORDS.id = LOOKUPS.word_key
@@ -91,6 +91,7 @@ def make_more_columns(data: pd.DataFrame, lang: str, to_translate: List[str]) ->
     data['sentence_with_cloze'] = data.apply(
         lambda x: x.Sentence.replace(x.Word, f'{{c1::{x.translated_word}}}'), axis=1
     )
+    # print(f'{data.shape = } in make_more_columns')
     st.session_state.translated_df = data.reset_index(drop=True)
     return data
 
@@ -132,13 +133,13 @@ def show_vocabulary_stats(df: pd.DataFrame) -> None:
         .head(5)
     )
 
-    # chart1 = (
-    #     alt.Chart(d)
-    #     .mark_bar()
-    #     .encode(y=alt.Y('Book title:N').sort('-x'), x=alt.X('count:Q'), tooltip=['Book title', 'count'])
-    #     .properties(title='Number of words in top 5 books')
-    #     .interactive()
-    # )
+    chart_ = (
+        alt.Chart(d)
+        .mark_bar()
+        .encode(y=alt.Y('Book title:N').sort('-x'), x=alt.X('count:Q'), tooltip=['Book title', 'count'])
+        .properties(title='Number of words in top 5 books')
+        .interactive()
+    )
 
     chart1 = (
         alt.Chart(d)
@@ -147,10 +148,7 @@ def show_vocabulary_stats(df: pd.DataFrame) -> None:
         .properties(title='Number of words in top 5 books')
         .interactive()
     )
-    # col1_, col2_ = st.columns(2)
-    # with col1_:
     st.altair_chart(chart, use_container_width=True)
-    # with col2_:
     st.altair_chart(chart1, use_container_width=True)
 
     col1, col2, col3, col4 = st.columns(4)

@@ -1,14 +1,17 @@
 ## KindleVocabToAnki
+Done:
+* don't forget to update version
+* change statistics
+* add info that google translate is used
 
 To do:
 * update all texts
 * update readme
-+ don't forget to update version
-+ change statistics. plot doesn't matter, as there is a max limit on the number of the words. n languages, if relevant
-* add info that google translate is used
+
 * check if I can translate providing context (GoogleTranslator(source='en', target='ru').translate('This <b>is</b> a dog'))
 * reorder default columns
 * add link to github
+* add context to google translate
 
 TWO IDEAS:
 * use sidebar

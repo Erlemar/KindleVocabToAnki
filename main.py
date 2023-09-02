@@ -47,9 +47,14 @@ holder3.subheader('Upload your kindle vocabulary file here')
 if 'data_exists' not in st.session_state:
     st.session_state.data_exists = False
 db = holder4.file_uploader('vocab.db', type='db', help='Upload the vocabulary file here')
+# if not db:
+#     st.session_state.translated_df = None
 
 use_sample = holder5.button('Press the button to use a sample data')
-
+if not db and not use_sample:
+    st.cache_data.clear()
+# st.write(f'{use_sample=}')
+# st.write(f'{db=}')
 data = pd.DataFrame
 
 if use_sample:
@@ -57,7 +62,9 @@ if use_sample:
     st.session_state.data_exists = True
     st.session_state.loaded_data = data
 
+# st.write(f'1{use_sample=}')
 if db or use_sample or st.session_state.data_exists:
+    # st.write(f'{db=} {use_sample=} {st.session_state.data_exists=}')
     time.sleep(1)
     # use sample data or the uploaded data
     if not use_sample and not st.session_state.data_exists:
@@ -66,6 +73,7 @@ if db or use_sample or st.session_state.data_exists:
     elif not use_sample:
         data = st.session_state.loaded_data
 
+    # st.write(f'2{use_sample=}')
     st.session_state.extracted = True
     holder1.empty()
     holder2.empty()
@@ -146,10 +154,20 @@ if db or use_sample or st.session_state.data_exists:
         st.dataframe(data.reset_index(drop=True))
     if data is None:
         data = st.session_state.loaded_data
-    translate = holder13.button('Translate', on_click=make_more_columns, args=(data, lang, to_translate))
+    # translate = holder13.button('Translate', on_click=make_more_columns, args=(data, lang, to_translate,         holder6,
+    #     holder7,
+    #     holder8,
+    #     holder9,
+    #     holder10,
+    #     holder11,
+    #     holder12,
+    #     holder13,))
 
+    translate = holder13.button('Translate', on_click=make_more_columns, args=(data, lang, to_translate))
+    # print(f'{data.shape=}')
     if translate or st.session_state.load_state:
-        # time.sleep(1)
+        # print(f'{translate=} {st.session_state.load_state=}')
+        time.sleep(1)
 
         holder6.empty()
         holder7.empty()
@@ -160,7 +178,8 @@ if db or use_sample or st.session_state.data_exists:
         holder12.empty()
         holder13.empty()
         st.session_state.load_state = True
-
+        # print(f'1{translate=} {st.session_state.load_state=}')
+        # print(st.session_state.translated_df)
         translated_data = st.session_state.translated_df
         st.success('Translation finished!', icon='✅')
         st.dataframe(translated_data)
@@ -215,7 +234,7 @@ if db or use_sample or st.session_state.data_exists:
         st.dataframe(new_data)
 
         st.subheader('Download options')
-        keep_header = st.checkbox('Keep header', value=False)
+        keep_header = st.checkbox('Keep header', value=True)
         sep = st.selectbox(label='Select separator', options=(';', 'Tab'), help='separator')
         sep = sep if sep == ';' else '\t'
 

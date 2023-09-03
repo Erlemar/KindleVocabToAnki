@@ -40,7 +40,7 @@ def get_data_from_vocab(db: st.runtime.uploaded_file_manager.UploadedFile) -> pd
     cur.execute(sql)
     data_sql = cur.fetchall()
     data = pd.DataFrame(
-        data_sql, columns=['Stem', 'Word', 'Word language', 'Sentence', 'Book title', 'Authors', 'Timestamp']
+        data_sql, columns=['Word', 'Stem', 'Word language', 'Sentence', 'Book title', 'Authors', 'Timestamp']
     )
     data['Timestamp'] = data['Timestamp'].apply(
         lambda t: datetime.datetime.fromtimestamp(t / 1000).strftime('%Y-%m-%d %H:%M:%S')

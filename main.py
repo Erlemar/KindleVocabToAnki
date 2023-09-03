@@ -16,10 +16,10 @@ if 'translated_df' not in st.session_state:
 if 'loaded_data' not in st.session_state:
     st.session_state.loaded_data = pd.DataFrame()
 use_sample = None
-holder1 = st.empty()
-holder2 = st.empty()
-holder3 = st.empty()
-holder4 = st.empty()
+st.session_state.holder1 = st.empty()
+st.session_state.holder2 = st.empty()
+st.session_state.holder3 = st.empty()
+st.session_state.holder4 = st.empty()
 holder5 = st.empty()
 holder6 = st.empty()
 holder7 = st.empty()
@@ -41,14 +41,12 @@ text = """
     This app doesn't keep your data - it is saved only in cache and is cleared after the end of your session.\n
     If you want to know more, you can read this blogpost [not written yet].
 """
-holder1.markdown(text, unsafe_allow_html=True)
-
-holder3.subheader('Upload your kindle vocabulary file here')
 if 'data_exists' not in st.session_state:
     st.session_state.data_exists = False
-db = holder4.file_uploader('vocab.db', type='db', help='Upload the vocabulary file here')
-# if not db:
-#     st.session_state.translated_df = None
+st.session_state.holder1.markdown(text, unsafe_allow_html=True)
+
+st.session_state.holder3.subheader('Upload your kindle vocabulary file here')
+db = st.session_state.holder4.file_uploader('vocab.db', type='db', help='Upload the vocabulary file here')
 
 use_sample = holder5.button('Press the button to use a sample data')
 if not db and not use_sample:
@@ -75,10 +73,10 @@ if db or use_sample or st.session_state.data_exists:
 
     # st.write(f'2{use_sample=}')
     st.session_state.extracted = True
-    holder1.empty()
-    holder2.empty()
-    holder3.empty()
-    holder4.empty()
+    st.session_state.holder1.empty()
+    st.session_state.holder2.empty()
+    st.session_state.holder3.empty()
+    st.session_state.holder4.empty()
     holder5.empty()
     holder6.subheader('Extracted data')
     text3 = """

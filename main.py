@@ -243,6 +243,7 @@ if db or use_sample or st.session_state.data_exists:
         st.download_button(
             label='Press to Download',
             data=new_data.to_csv(index=False, sep=';', header=keep_header),
+            # TODO add date to the file name
             file_name=f'{file_name}.csv',
             mime='text/csv',
             key='download-csv',

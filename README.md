@@ -7,7 +7,7 @@ Done:
 To do:
 * update all texts
 * update readme
-
+* don't keep header
 * check if I can translate providing context (GoogleTranslator(source='en', target='ru').translate('This <b>is</b> a dog'))
 * reorder default columns
 * add link to github
@@ -16,6 +16,11 @@ To do:
 TWO IDEAS:
 * use sidebar
 * hide elements
+
+Пара идей:
+использовать with с placeholder
+делать отдельные функции с cache
+пример из try_placeholder https://discuss.streamlit.io/t/how-to-clear-screen-make-blank-again/30971/2
 
 This is an app to convert Kindle vocab file so that it can be imported into Anki. There are some alternatives, but this is the only Web-based version. There is no need to install anything. And it should be usable from the Kindle itself.
 

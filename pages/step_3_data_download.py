@@ -1,10 +1,4 @@
-import time
-
-import pandas as pd
 import streamlit as st
-from deep_translator import GoogleTranslator
-
-from src.utils import get_data_from_vocab, make_more_columns, show_vocabulary_stats
 
 if 'translated_df' in st.session_state:
     translated_data = st.session_state.translated_df

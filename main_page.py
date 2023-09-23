@@ -1,9 +1,10 @@
 import streamlit as st
 
 st.set_page_config(
-    page_title='Hello',
-    page_icon='👋',
+    page_title='Kindle Vocabulary to Anki converter',
+    # page_icon='👋',
 )
+st.title('Kindle Vocabulary to Anki converter')
 
 text = """
     This is an app for converting kindle vocab file into a table that can be imported into anki.\n

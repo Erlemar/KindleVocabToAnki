@@ -53,11 +53,6 @@ st.session_state.use_sample = st.button('Press the button to use a sample data',
 if not st.session_state.db and not use_sample:
     st.cache_data.clear()
 
-# if st.session_state.use_sample and not st.session_state.db:
-#     data = pd.read_csv('data_example/example_data.csv')
-#     st.session_state.data_exists = True
-#     st.session_state.loaded_data = data
-
 if (
     st.session_state.db
     or st.session_state.use_sample
@@ -73,7 +68,6 @@ if (
             data = st.session_state.loaded_data
     else:
         if st.session_state.data_type == 'db':
-            # data = get_data_from_vocab(st.session_state.db)
             # st.session_state.loaded_data = data
             data = st.session_state.loaded_data
         elif st.session_state.data_type == 'sample':

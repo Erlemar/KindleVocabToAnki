@@ -125,7 +125,6 @@ def make_more_columns(data: pd.DataFrame, lang: str, to_translate: List[str], tr
     data['sentence_with_cloze'] = data.apply(
         lambda x: x.Sentence.replace(x.Word, f'{{c1::{x.translated_word}}}'), axis=1
     )
-    # print(f'{data.shape = } in make_more_columns')
     st.session_state.translated_df = data.reset_index(drop=True)
     return data
 
@@ -165,14 +164,6 @@ def show_vocabulary_stats(df: pd.DataFrame) -> None:
         .reset_index()
         # .rename(columns={'index': 'Book title', 'Book title': 'Count'})
         .head(5)
-    )
-
-    chart_ = (
-        alt.Chart(d)
-        .mark_bar()
-        .encode(y=alt.Y('Book title:N').sort('-x'), x=alt.X('count:Q'), tooltip=['Book title', 'count'])
-        .properties(title='Number of words in top 5 books')
-        .interactive()
     )
 
     chart1 = (

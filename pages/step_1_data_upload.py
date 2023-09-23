@@ -68,11 +68,9 @@ if (
             data = st.session_state.loaded_data
     else:
         if st.session_state.data_type == 'db':
-            # st.session_state.loaded_data = data
             data = st.session_state.loaded_data
         elif st.session_state.data_type == 'sample':
             data = st.session_state.loaded_data
-    # st.write(f'2{use_sample=}')
     st.session_state.extracted = True
     st.subheader('Extracted data')
     text3 = """

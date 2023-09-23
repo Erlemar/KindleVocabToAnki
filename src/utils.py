@@ -28,7 +28,7 @@ def get_data_from_vocab(db: st.runtime.uploaded_file_manager.UploadedFile) -> pd
     cur = con.cursor()
 
     sql = """
-        SELECT WORDS.stem, WORDS.word, WORDS.lang, LOOKUPS.usage, BOOK_INFO.title, BOOK_INFO.authors, LOOKUPS.timestamp
+        SELECT WORDS.word, WORDS.stem, WORDS.lang, LOOKUPS.usage, BOOK_INFO.title, BOOK_INFO.authors, LOOKUPS.timestamp
           FROM LOOKUPS
           LEFT JOIN WORDS
             ON WORDS.id = LOOKUPS.word_key
@@ -40,7 +40,7 @@ def get_data_from_vocab(db: st.runtime.uploaded_file_manager.UploadedFile) -> pd
     cur.execute(sql)
     data_sql = cur.fetchall()
     data = pd.DataFrame(
-        data_sql, columns=['Stem', 'Word', 'Word language', 'Sentence', 'Book title', 'Authors', 'Timestamp']
+        data_sql, columns=['Word', 'Stem', 'Word language', 'Sentence', 'Book title', 'Authors', 'Timestamp']
     )
     data['Timestamp'] = data['Timestamp'].apply(
         lambda t: datetime.datetime.fromtimestamp(t / 1000).strftime('%Y-%m-%d %H:%M:%S')
@@ -69,7 +69,34 @@ def translate(data: List, lang: str) -> List[str]:
 
 
 @st.cache_data()
-def make_more_columns(data: pd.DataFrame, lang: str, to_translate: List[str]) -> pd.DataFrame:
+def translate_with_context(data: List, lang: str) -> List[str]:
+    """
+    Translate text.
+
+    Args:
+        data: pandas dataframe with the data
+        lang: target language for translating
+
+    Returns:
+        the list of the translated words
+    """
+    translated = []
+    for text_lang, text, word in stqdm(data, total=len(data), desc='Translating...'):
+        # mark the word in the sentence
+        translated_text = GoogleTranslator(source=text_lang, target=lang).translate(text.replace(word, f'||{word}|'))
+        st.write(translated_text)
+        # extract the word from the marked sentence
+        translated_word = translated_text.split('||')[1].split('|')[0]
+        # in case the translation failed
+        if translated_word == word:
+            translated_word = GoogleTranslator(source=text_lang, target=lang).translate(text)
+        translated.append(translated_word)
+
+    return translated
+
+
+@st.cache_data(show_spinner=False)
+def make_more_columns(data: pd.DataFrame, lang: str, to_translate: List[str], translate_option: str) -> pd.DataFrame:
     """
     Create additional columns.
 
@@ -77,15 +104,22 @@ def make_more_columns(data: pd.DataFrame, lang: str, to_translate: List[str]) ->
         data: pandas DataFrame with the data
         lang: target language for translation
         to_translate: columns to translate
+        translate_option: how to translate the word
 
     Returns:
         processed data.
 
     """
-    for col in to_translate:
-        data[f'translated_{col.lower()}'] = translate(
-            list(data[['Word language', col]].itertuples(index=False, name=None)), lang
+    if translate_option == 'Use context':
+        data['translated_word'] = translate_with_context(
+            list(data[['Word language', 'Sentence', 'Word']].itertuples(index=False, name=None)), lang
         )
+
+    for col in to_translate:
+        if col != 'Word' or (col == 'Word' and translate_option == 'Word only'):
+            data[f'translated_{col.lower()}'] = translate(
+                list(data[['Word language', col]].itertuples(index=False, name=None)), lang
+            )
 
     data['sentence_with_highlight'] = data.apply(lambda x: x.Sentence.replace(x.Word, '_'), axis=1)
     data['sentence_with_cloze'] = data.apply(
@@ -132,14 +166,6 @@ def show_vocabulary_stats(df: pd.DataFrame) -> None:
         .head(5)
     )
 
-    # chart1 = (
-    #     alt.Chart(d)
-    #     .mark_bar()
-    #     .encode(y=alt.Y('Book title:N').sort('-x'), x=alt.X('count:Q'), tooltip=['Book title', 'count'])
-    #     .properties(title='Number of words in top 5 books')
-    #     .interactive()
-    # )
-
     chart1 = (
         alt.Chart(d)
         .mark_arc()
@@ -147,10 +173,7 @@ def show_vocabulary_stats(df: pd.DataFrame) -> None:
         .properties(title='Number of words in top 5 books')
         .interactive()
     )
-    # col1_, col2_ = st.columns(2)
-    # with col1_:
     st.altair_chart(chart, use_container_width=True)
-    # with col2_:
     st.altair_chart(chart1, use_container_width=True)
 
     col1, col2, col3, col4 = st.columns(4)

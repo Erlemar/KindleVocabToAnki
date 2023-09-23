@@ -1,49 +1,28 @@
 ## KindleVocabToAnki
+Done:
+* don't forget to update version
+* change statistics
+* add info that google translate is used
+* don't keep header
+* reorder default columns
+* add link to github
+* check recalculations
+* check if I can translate providing context (GoogleTranslator(source='en', target='ru').translate('This <b>is</b> a dog'))
+* add context to google translate
 
 To do:
 * update all texts
 * update readme
-+ don't forget to update version
-+ change statistics. plot doesn't matter, as there is a max limit on the number of the words. n languages, if relevant
-* add info that google translate is used
-* check if I can translate providing context (GoogleTranslator(source='en', target='ru').translate('This <b>is</b> a dog'))
-* reorder default columns
-* add link to github
-
-TWO IDEAS:
-* use sidebar
-* hide elements
+* install streamlit pages
 
 This is an app to convert Kindle vocab file so that it can be imported into Anki. There are some alternatives, but this is the only Web-based version. There is no need to install anything. And it should be usable from the Kindle itself.
 
-https://github.com/prz3m/kind2anki https://ankiweb.net/shared/info/1621749993
-good: it is an anki-addon
-bad: not-customizable
-
-* select desk to import
-* select target language
-* translate words
-* no possibility to use stem instead of word as the key
-
-https://fluentcards.com/kindle
-good: nice interface, split by books, can export base sentence or cloze deletion
-bad: not all words are translated
-
-https://github.com/NdYAG/Kindle2Anki
-need to install npm
-
-
-https://github.com/wzyboy/kindle_vocab_anki
-good: templates
-bad: too many actions
-https://github.com/wzyboy/kindle_vocab_anki/blob/master/convert_vocab.py - create anki cards
-
-
-GOOGLE HOW TO PUT PROGRESSBAR LOWER
-
-
-
-Kindlemate
+Alternatives:
+* https://github.com/prz3m/kind2anki - anki addon, but not customizable
+* https://fluentcards.com/kindle - nice interface, split by books, can export base sentence or cloze deletion, but not all words are translated
+* https://github.com/NdYAG/Kindle2Anki - need to install npm
+* https://github.com/wzyboy/kindle_vocab_anki - allows to create templates for the cards, but it requires using Python in command line and requires a lot of steps
+* Kindlemate - great, but windows only
 good:
 bad: windows only
 
@@ -51,20 +30,3 @@ dictionaries
 https://en.pons.com/p/online-dictionary/developers/api ?
 
 https://dictionaryapi.com/products/api-spanish-dictionary ?
-
-ADD bold highlight
-
-==
-
-links:
-* https://github.com/prz3m/kind2anki
-* https://addon-docs.ankiweb.net/qt.html
-* https://github.com/ankitects/anki/blob/main/docs/architecture.md
-* https://www.reddit.com/r/Anki/comments/961cj8/documentation_for_creating_addons/
-* https://github.com/users/Erlemar/projects/1/views/1?filterQuery=-status%3ADone
-*
-
-    * Kindle Mate - an awesome app, but it works for Windows only;
-    * Several repositories on GitHub, requiring installing them;
-    * Anki addon - great
-    * flashcards

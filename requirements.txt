@@ -1,7 +1,8 @@
 deep_translator==1.11.4
-pandas==2.0.3
+pandas==2.1.1
 stqdm==0.0.5
-streamlit==1.25.0
+streamlit==1.27.0
 tqdm==4.66.1
-pytest==7.4.0
-altair==5.0.1
+pytest==7.4.2
+altair==5.1.1
+st_pages==0.4.4

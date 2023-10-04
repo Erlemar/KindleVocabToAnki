@@ -6,7 +6,7 @@ from typing import List
 import altair as alt
 import pandas as pd
 import streamlit as st
-from deep_translator import GoogleTranslator
+from deep_translator import GoogleTranslator, ChatGptTranslator
 from stqdm import stqdm
 
 
@@ -110,6 +110,7 @@ def make_more_columns(data: pd.DataFrame, lang: str, to_translate: List[str], tr
         processed data.
 
     """
+    # TODO: remove this, it doesn't work well
     if translate_option == 'Use context':
         data['translated_word'] = translate_with_context(
             list(data[['Word language', 'Sentence', 'Word']].itertuples(index=False, name=None)), lang

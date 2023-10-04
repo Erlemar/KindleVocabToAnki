@@ -9,11 +9,14 @@ Done:
 * check recalculations
 * check if I can translate providing context (GoogleTranslator(source='en', target='ru').translate('This <b>is</b> a dog'))
 * add context to google translate
+* install streamlit pages
+* IF NO SELECTION OF TRANSLATION, SELECT ALL
+* Exception when try to translate without uploaded data
 
 To do:
 * update all texts
 * update readme
-* install streamlit pages
+* try using chatgpt api for translation
 
 This is an app to convert Kindle vocab file so that it can be imported into Anki. There are some alternatives, but this is the only Web-based version. There is no need to install anything. And it should be usable from the Kindle itself.
 

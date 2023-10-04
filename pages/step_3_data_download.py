@@ -1,8 +1,9 @@
 import streamlit as st
 
-if 'translated_df' in st.session_state:
+st.subheader('Customize translated data')
+
+if 'translated_df' in st.session_state and st.session_state.translated_df.shape[0] > 0:
     translated_data = st.session_state.translated_df
-    st.subheader('Customize translated data')
     options = st.multiselect(
         label='Columns to use',
         options=list(translated_data.columns),
@@ -71,3 +72,6 @@ if 'translated_df' in st.session_state:
         key='download-csv',
         help='press m!',
     )
+
+else:
+    st.write('You need to translate some data in order to download it.')

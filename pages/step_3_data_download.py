@@ -30,6 +30,7 @@ if 'translated_df' in st.session_state and st.session_state.translated_df.shape[
             'Surround with [] brackets',
             'Surround with {} brackets',
             'Bold',
+            'Cloze deletion',
         ),
         index=0,
         help='separator',
@@ -48,9 +49,11 @@ if 'translated_df' in st.session_state and st.session_state.translated_df.shape[
         )
     elif highlight == 'Bold':
         new_data['sentence_with_highlight'] = new_data.apply(
-            lambda x: x.Sentence.replace(x.Word, f'<b>{x.Word}</b>'),
-            axis=1
-            # lambda x: x.Sentence.replace(x.Word, f'\033[1m{x.Word}\033[1m'), axis=1
+            lambda x: x.Sentence.replace(x.Word, f'<b>{x.Word}</b>'), axis=1
+        )
+    elif highlight == 'Cloze deletion':
+        new_data['sentence_with_highlight'] = new_data.apply(
+            lambda x: x.Sentence.replace(x.Word, '{{c1::' + x.translated_word + '::' + x.Word + '}}'), axis=1
         )
     st.dataframe(new_data)
 
@@ -60,9 +63,6 @@ if 'translated_df' in st.session_state and st.session_state.translated_df.shape[
     sep = sep if sep == ';' else '\t'
 
     file_name = st.text_input('File name (without extension)', 'anki_table')
-    # TODO check file name, maybe it doesn't work. IT WORKS, but need to confirm the choice
-    # TODO check that remove header works
-
     st.download_button(
         label='Press to Download',
         data=new_data.to_csv(index=False, sep=';', header=keep_header),

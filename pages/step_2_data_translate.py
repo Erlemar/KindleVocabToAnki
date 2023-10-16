@@ -57,7 +57,7 @@ if 'loaded_data' in st.session_state and st.session_state.loaded_data.shape[0] >
 
         to_translate = st.multiselect(
             label='What to translate (select one or multiple)',
-            options=['Word', 'Stem`', 'Sentence'],
+            options=['Word', 'Stem', 'Sentence'],
             default=['Word'],
             help='Select the columns that will be translated',
         )
@@ -80,7 +80,7 @@ if 'loaded_data' in st.session_state and st.session_state.loaded_data.shape[0] >
             st.session_state.data = st.session_state.data.loc[st.session_state.data['Authors'].isin(authors)]
 
         langs_from = st.multiselect(
-            label='languages to translate',
+            label='Languages to translate',
             options=st.session_state.data['Word language'].unique(),
             default=st.session_state.data['Word language'].unique(),
             help='Select the languages that will be translated',

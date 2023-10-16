@@ -18,7 +18,7 @@ if 'data_exists' not in st.session_state:
 
 st.subheader('Upload your kindle vocabulary file here')
 if st.session_state.loaded_data.shape[0] > 0:
-    st.write('Data is already uploaded. You can reupload the data, if you want')
+    st.write('The data is already uploaded. You can upload a new file, if necessary.')
 
 
 def get_vocab_data():
@@ -77,7 +77,8 @@ if (
         This is the data extracted from the Kindle vocabulary file. You can sort it by clicking on any column name.
     """
     st.markdown(text3, unsafe_allow_html=True)
-    st.dataframe(data)
+    cols_to_show = ['Word', 'Stem', 'Word language', 'Sentence', 'Book title', 'Authors', 'Timestamp']
+    st.dataframe(data[cols_to_show])
 
     my_expander1 = st.expander(label='Show vocabulary statistics')
     with my_expander1:

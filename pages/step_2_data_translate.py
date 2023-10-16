@@ -11,7 +11,6 @@ st.subheader('Define translation parameters')
 my_expander2 = st.expander(label='Translation parameters', expanded=True)
 
 if 'loaded_data' in st.session_state and st.session_state.loaded_data.shape[0] > 0:
-
     st.session_state.data = st.session_state.loaded_data.copy()
     with my_expander2:
         # limit the number of rows

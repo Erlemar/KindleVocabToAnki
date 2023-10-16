@@ -20,7 +20,7 @@ text = """
 
     Please note that this app does not store your data permanently. It is only saved in cache and will be cleared after your session ends.
 
-    If you would like more information, you can refer to this blogpost [not written yet]. Project link: https://github.com/Erlemar/KindleVocabToAnki
+    Project link: https://github.com/Erlemar/KindleVocabToAnki
 """
 st.markdown(text, unsafe_allow_html=True)
 

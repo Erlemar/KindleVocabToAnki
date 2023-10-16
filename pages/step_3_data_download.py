@@ -65,7 +65,7 @@ if 'translated_df' in st.session_state and st.session_state.translated_df.shape[
     sep = sep if sep == ';' else '\t'
     date = str(datetime.today().date()).replace('-', '_')
 
-    file_name = st.text_input('File name (without extension)', 'anki_table')
+    file_name = st.text_input('File name (without extension)', f'anki_table_{date}')
     st.download_button(
         label='Press to Download',
         data=new_data.to_csv(index=False, sep=';', header=keep_header),

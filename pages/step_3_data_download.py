@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import streamlit as st
 
 st.subheader('Customize translated data')
@@ -61,13 +63,13 @@ if 'translated_df' in st.session_state and st.session_state.translated_df.shape[
     keep_header = st.checkbox('Keep header', value=False)
     sep = st.selectbox(label='Select separator', options=(';', 'Tab'), help='separator')
     sep = sep if sep == ';' else '\t'
+    date = str(datetime.today().date()).replace('-', '_')
 
     file_name = st.text_input('File name (without extension)', 'anki_table')
     st.download_button(
         label='Press to Download',
         data=new_data.to_csv(index=False, sep=';', header=keep_header),
-        # TODO add date to the file name
-        file_name=f'{file_name}.csv',
+        file_name=f'{file_name}_{date}.csv',
         mime='text/csv',
         key='download-csv',
         help='press m!',

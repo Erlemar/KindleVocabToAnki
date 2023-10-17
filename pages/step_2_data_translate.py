@@ -47,10 +47,11 @@ if 'loaded_data' in st.session_state and st.session_state.loaded_data.shape[0] >
         with col1__:
             lang = st.selectbox('Lang to translate into', options=langs_list, index=langs_list.index('english'))
             lang = GoogleTranslator().get_supported_languages(as_dict=True)[lang]
+        translate_options = ['Word only', 'Use context']
         with col2__:
             translate_option = st.selectbox(
                 'Word translation style',
-                options=['Word only', 'Use context'],
+                options=translate_options,
                 help='Translate the word by itself or use the whole phrase as a context',
             )
 

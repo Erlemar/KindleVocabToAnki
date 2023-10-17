@@ -21,6 +21,8 @@ text = """
     Please note that this app does not store your data permanently. It is only saved in cache and will be cleared after your session ends.
 
     Project link: https://github.com/Erlemar/KindleVocabToAnki
+
+    Blogpost link: https://andlukyane.com/blog/kindlevocabtoanki
 """
 st.markdown(text, unsafe_allow_html=True)
 

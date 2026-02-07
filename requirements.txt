@@ -1,4 +1,5 @@
 deep_translator==1.11.4
+openai
 pandas==2.3.3
 stqdm==0.0.5
 streamlit==1.54.0

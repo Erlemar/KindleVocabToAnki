@@ -1,3 +1,4 @@
+import os
 import time
 
 import pandas as pd
@@ -39,6 +40,12 @@ if 'loaded_data' in st.session_state and st.session_state.loaded_data.shape[0] >
         st.session_state.data = st.session_state.data.loc[
             pd.to_datetime(st.session_state.data['Timestamp']).dt.date >= d
         ]
+
+        # Drop duplicate words
+        drop_dupes = st.checkbox('Drop duplicate words (keep last occurrence)', value=False)
+        if drop_dupes:
+            st.session_state.data = st.session_state.data.drop_duplicates('Word', keep='last')
+
         # select the target language
         langs_list = GoogleTranslator().get_supported_languages()
 
@@ -46,13 +53,66 @@ if 'loaded_data' in st.session_state and st.session_state.loaded_data.shape[0] >
         with col1__:
             lang = st.selectbox('Lang to translate into', options=langs_list, index=langs_list.index('english'))
             lang = GoogleTranslator().get_supported_languages(as_dict=True)[lang]
-        translate_options = ['Word only', 'Use context']
+
         with col2__:
+            translation_backend = st.selectbox(
+                'Translation backend',
+                options=['Google Translate', 'OpenAI'],
+                help='Google Translate is free. OpenAI provides higher-quality context-aware translations.',
+            )
+
+        # Word translation style — only for Google Translate
+        translate_options = ['Word only', 'Use context']
+        if translation_backend == 'Google Translate':
             translate_option = st.selectbox(
                 'Word translation style',
                 options=translate_options,
                 help='Translate the word by itself or use the whole phrase as a context',
             )
+        else:
+            translate_option = 'Use context'
+            st.info('OpenAI always uses sentence context for word translation.')
+
+        # OpenAI-specific controls
+        openai_api_key = ''
+        openai_model = 'gpt-4o-mini'
+        add_furigana_col = False
+
+        if translation_backend == 'OpenAI':
+            # API key: check environment / secrets first
+            env_key = os.environ.get('OPENAI_API_KEY', '')
+            secrets_key = ''
+            try:
+                secrets_key = st.secrets.get('OPENAI_API_KEY', '')
+            except Exception:
+                pass
+
+            if env_key:
+                openai_api_key = env_key
+                st.success('OpenAI API key found in environment variables.')
+            elif secrets_key:
+                openai_api_key = secrets_key
+                st.success('OpenAI API key found in Streamlit secrets.')
+            else:
+                openai_api_key = st.text_input(
+                    'OpenAI API key',
+                    type='password',
+                    help='Enter your OpenAI API key. It will not be stored.',
+                )
+
+            openai_model = st.selectbox(
+                'OpenAI model',
+                options=['gpt-4o-mini', 'gpt-4o', 'gpt-5.2'],
+                help='gpt-4o-mini is cheapest, gpt-5.2 is highest quality.',
+            )
+
+            # Furigana option — only if Japanese data is present
+            if 'ja' in st.session_state.data['Word language'].values:
+                add_furigana_col = st.checkbox(
+                    'Add furigana to Japanese sentences',
+                    value=False,
+                    help='Uses OpenAI to add reading annotations (furigana) to kanji in sentences.',
+                )
 
         to_translate = st.multiselect(
             label='What to translate (select one or multiple)',
@@ -87,7 +147,7 @@ if 'loaded_data' in st.session_state and st.session_state.loaded_data.shape[0] >
         if len(langs_from) > 0:
             st.session_state.data = st.session_state.data.loc[st.session_state.data['Word language'].isin(langs_from)]
 
-        st.write(f'{st.session_state.data.shape[0]} texts will be translated (using Google Translate)')
+        st.write(f'{st.session_state.data.shape[0]} texts will be translated (using {translation_backend})')
         st.session_state.loaded_data = st.session_state.data
         st.dataframe(
             st.session_state.data.reset_index(drop=True).drop(
@@ -97,9 +157,27 @@ if 'loaded_data' in st.session_state and st.session_state.loaded_data.shape[0] >
     if st.session_state.data is None:
         st.session_state.data = st.session_state.loaded_data
 
+    # Disable button if OpenAI selected but no API key
+    translate_disabled = translation_backend == 'OpenAI' and not openai_api_key
+
     st.session_state.translate = st.button(
-        'Translate', on_click=make_more_columns, args=(st.session_state.data, lang, to_translate, translate_option)
+        'Translate',
+        on_click=make_more_columns,
+        args=(
+            st.session_state.data,
+            lang,
+            to_translate,
+            translate_option,
+            translation_backend,
+            openai_api_key,
+            openai_model,
+            add_furigana_col,
+        ),
+        disabled=translate_disabled,
     )
+
+    if translate_disabled:
+        st.warning('Please provide an OpenAI API key to translate.')
 
     if st.session_state.translate or st.session_state.load_state:
         time.sleep(1)
@@ -107,7 +185,8 @@ if 'loaded_data' in st.session_state and st.session_state.loaded_data.shape[0] >
         st.session_state.load_state = True
         translated_data = st.session_state.translated_df
         st.success('Translation finished!', icon='✅')
-        st.dataframe(translated_data.drop([col for col in translated_data.columns if 'with' in col], axis=1))
+        cols_to_hide = [col for col in translated_data.columns if 'with' in col and col != 'sentence_with_furigana']
+        st.dataframe(translated_data.drop(cols_to_hide, axis=1))
 
 else:
     st.write('You need to upload some data in order to translate it.')

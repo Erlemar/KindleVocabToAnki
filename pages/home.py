@@ -1,10 +1,5 @@
-from st_pages import Page, show_pages, add_page_title
 import streamlit as st
 
-st.set_page_config(
-    page_title='Kindle Vocabulary to Anki converter',
-    # page_icon='👋',
-)
 st.title('Kindle Vocabulary to Anki converter')
 
 text = """

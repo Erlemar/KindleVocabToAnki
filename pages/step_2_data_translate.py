@@ -6,7 +6,6 @@ from deep_translator import GoogleTranslator
 
 from src.utils import make_more_columns
 
-
 st.subheader('Define translation parameters')
 my_expander2 = st.expander(label='Translation parameters', expanded=True)
 

@@ -1,3 +1,10 @@
+# OS files
+.DS_Store
+
+# Development scripts
+short_script.py
+try_openai.py
+
 # Pycharm files
 
 

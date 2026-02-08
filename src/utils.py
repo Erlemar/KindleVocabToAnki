@@ -1,7 +1,7 @@
 import datetime
 import sqlite3
 import tempfile
-from typing import List
+from typing import List, Tuple
 
 import altair as alt
 import pandas as pd
@@ -72,12 +72,12 @@ def get_data_from_vocab(db: st.runtime.uploaded_file_manager.UploadedFile) -> pd
 
 
 @st.cache_data(ttl=3600)
-def translate(data: List, lang: str) -> List[str]:
+def translate(data: List[Tuple[str, str]], lang: str) -> List[str]:
     """
     Translate text.
 
     Args:
-        data: pandas dataframe with the data
+        data: list of tuples (source_lang, text)
         lang: target language for translating
 
     Returns:
@@ -95,12 +95,12 @@ def translate(data: List, lang: str) -> List[str]:
 
 
 @st.cache_data(ttl=3600)
-def translate_with_context(data: List, lang: str) -> List[str]:
+def translate_with_context(data: List[Tuple[str, str, str]], lang: str) -> List[str]:
     """
-    Translate text.
+    Translate text with context.
 
     Args:
-        data: pandas dataframe with the data
+        data: list of tuples (source_lang, sentence, word)
         lang: target language for translating
 
     Returns:
@@ -127,7 +127,7 @@ def translate_with_context(data: List, lang: str) -> List[str]:
 
 
 @st.cache_data(ttl=3600)
-def translate_openai(data: List, lang: str, api_key: str, model: str) -> List[str]:
+def translate_openai(data: List[Tuple[str, str, str]], lang: str, api_key: str, model: str) -> List[str]:
     """
     Translate words using OpenAI with sentence context.
 

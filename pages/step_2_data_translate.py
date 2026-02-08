@@ -1,17 +1,18 @@
 import os
-import time
 
 import pandas as pd
 import streamlit as st
 from deep_translator import GoogleTranslator
 
-from src.utils import make_more_columns
+from src.utils import estimate_openai_cost, make_more_columns
 
 st.subheader('Define translation parameters')
 my_expander2 = st.expander(label='Translation parameters', expanded=True)
 
 if 'loaded_data' in st.session_state and st.session_state.loaded_data.shape[0] > 0:
-    st.session_state.data = st.session_state.loaded_data.copy()
+    data = st.session_state.loaded_data.copy()
+    initial_count = data.shape[0]
+
     with my_expander2:
         # limit the number of rows
         col1_, col2_ = st.columns(2)
@@ -20,8 +21,8 @@ if 'loaded_data' in st.session_state and st.session_state.loaded_data.shape[0] >
                 st.number_input(
                     'Take last N rows',
                     min_value=1,
-                    max_value=st.session_state.data.shape[0],
-                    value=st.session_state.data.shape[0],
+                    max_value=data.shape[0],
+                    value=data.shape[0],
                 )
             )
         with col2_:
@@ -29,22 +30,27 @@ if 'loaded_data' in st.session_state and st.session_state.loaded_data.shape[0] >
                 'Sort data by', options=['Timestamp', 'Word'], help='Select the column to sort the data by'
             )
 
-        st.session_state.data = st.session_state.data.sort_values(col_by)[-top_n:]
+        data = data.sort_values(col_by)[-top_n:]
+        st.caption(f'After row limit: {data.shape[0]} rows (from {initial_count})')
+
         d = st.date_input(
             label='Starting date',
-            value=pd.to_datetime(st.session_state.data['Timestamp']).dt.date.min(),
-            min_value=pd.to_datetime(st.session_state.data['Timestamp']).dt.date.min(),
-            max_value=pd.to_datetime(st.session_state.data['Timestamp']).dt.date.max(),
-            help='Change this value if you want to limit the st.session_state.data by the start date',
+            value=pd.to_datetime(data['Timestamp']).dt.date.min(),
+            min_value=pd.to_datetime(data['Timestamp']).dt.date.min(),
+            max_value=pd.to_datetime(data['Timestamp']).dt.date.max(),
+            help='Change this value if you want to limit the data by the start date',
         )
-        st.session_state.data = st.session_state.data.loc[
-            pd.to_datetime(st.session_state.data['Timestamp']).dt.date >= d
-        ]
+        before_date = data.shape[0]
+        data = data.loc[pd.to_datetime(data['Timestamp']).dt.date >= d]
+        if data.shape[0] != before_date:
+            st.caption(f'After date filter: {data.shape[0]} rows (removed {before_date - data.shape[0]})')
 
         # Drop duplicate words
         drop_dupes = st.checkbox('Drop duplicate words (keep last occurrence)', value=False)
         if drop_dupes:
-            st.session_state.data = st.session_state.data.drop_duplicates('Word', keep='last')
+            before_dupes = data.shape[0]
+            data = data.drop_duplicates('Word', keep='last')
+            st.caption(f'After dedup: {data.shape[0]} rows (removed {before_dupes - data.shape[0]} duplicates)')
 
         # select the target language
         langs_list = GoogleTranslator().get_supported_languages()
@@ -84,7 +90,7 @@ if 'loaded_data' in st.session_state and st.session_state.loaded_data.shape[0] >
             secrets_key = ''
             try:
                 secrets_key = st.secrets.get('OPENAI_API_KEY', '')
-            except Exception:
+            except (FileNotFoundError, AttributeError):
                 pass
 
             if env_key:
@@ -107,7 +113,7 @@ if 'loaded_data' in st.session_state and st.session_state.loaded_data.shape[0] >
             )
 
             # Furigana option — only if Japanese data is present
-            if 'ja' in st.session_state.data['Word language'].values:
+            if 'ja' in data['Word language'].values:
                 add_furigana_col = st.checkbox(
                     'Add furigana to Japanese sentences',
                     value=False,
@@ -123,48 +129,58 @@ if 'loaded_data' in st.session_state and st.session_state.loaded_data.shape[0] >
 
         books = st.multiselect(
             label='Filter by books',
-            options=st.session_state.data['Book title'].unique(),
-            default=st.session_state.data['Book title'].unique(),
+            options=data['Book title'].unique(),
+            default=data['Book title'].unique(),
             help='Select the books that will be translated',
         )
         if len(books) > 0:
-            st.session_state.data = st.session_state.data.loc[st.session_state.data['Book title'].isin(books)]
+            before_books = data.shape[0]
+            data = data.loc[data['Book title'].isin(books)]
+            if data.shape[0] != before_books:
+                st.caption(f'After book filter: {data.shape[0]} rows (removed {before_books - data.shape[0]})')
+
         authors = st.multiselect(
             label='Filter by authors',
-            options=st.session_state.data['Authors'].unique(),
-            default=st.session_state.data['Authors'].unique(),
+            options=data['Authors'].unique(),
+            default=data['Authors'].unique(),
             help='Select the Authors that will be translated',
         )
         if len(authors) > 0:
-            st.session_state.data = st.session_state.data.loc[st.session_state.data['Authors'].isin(authors)]
+            before_authors = data.shape[0]
+            data = data.loc[data['Authors'].isin(authors)]
+            if data.shape[0] != before_authors:
+                st.caption(f'After author filter: {data.shape[0]} rows (removed {before_authors - data.shape[0]})')
 
         langs_from = st.multiselect(
             label='Languages to translate',
-            options=st.session_state.data['Word language'].unique(),
-            default=st.session_state.data['Word language'].unique(),
+            options=data['Word language'].unique(),
+            default=data['Word language'].unique(),
             help='Select the languages that will be translated',
         )
         if len(langs_from) > 0:
-            st.session_state.data = st.session_state.data.loc[st.session_state.data['Word language'].isin(langs_from)]
+            before_langs = data.shape[0]
+            data = data.loc[data['Word language'].isin(langs_from)]
+            if data.shape[0] != before_langs:
+                st.caption(f'After language filter: {data.shape[0]} rows (removed {before_langs - data.shape[0]})')
 
-        st.write(f'{st.session_state.data.shape[0]} texts will be translated (using {translation_backend})')
-        st.session_state.loaded_data = st.session_state.data
+        st.write(f'{data.shape[0]} texts will be translated (using {translation_backend})')
+
+        if translation_backend == 'OpenAI' and openai_api_key:
+            cost = estimate_openai_cost(data.shape[0], openai_model)
+            st.info(f'Estimated OpenAI cost: {cost} (approximate)')
+
         st.dataframe(
-            st.session_state.data.reset_index(drop=True).drop(
-                [col for col in st.session_state.data.columns if 'with' in col or 'translated' in col], axis=1
+            data.reset_index(drop=True).drop(
+                [col for col in data.columns if 'with' in col or 'translated' in col], axis=1
             )
         )
-    if st.session_state.data is None:
-        st.session_state.data = st.session_state.loaded_data
 
     # Disable button if OpenAI selected but no API key
     translate_disabled = translation_backend == 'OpenAI' and not openai_api_key
 
-    st.session_state.translate = st.button(
-        'Translate',
-        on_click=make_more_columns,
-        args=(
-            st.session_state.data,
+    def on_translate():
+        result = make_more_columns(
+            data,
             lang,
             to_translate,
             translate_option,
@@ -172,17 +188,20 @@ if 'loaded_data' in st.session_state and st.session_state.loaded_data.shape[0] >
             openai_api_key,
             openai_model,
             add_furigana_col,
-        ),
+        )
+        st.session_state.translated_df = result
+        st.session_state.load_state = True
+
+    st.button(
+        'Translate',
+        on_click=on_translate,
         disabled=translate_disabled,
     )
 
     if translate_disabled:
         st.warning('Please provide an OpenAI API key to translate.')
 
-    if st.session_state.translate or st.session_state.load_state:
-        time.sleep(1)
-
-        st.session_state.load_state = True
+    if st.session_state.load_state:
         translated_data = st.session_state.translated_df
         st.success('Translation finished!', icon='✅')
         cols_to_hide = [col for col in translated_data.columns if 'with' in col and col != 'sentence_with_furigana']

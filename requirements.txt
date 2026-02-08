@@ -1,8 +1,7 @@
 deep_translator==1.11.4
-openai
+openai>=1.0,<3.0
 pandas==2.3.3
 stqdm==0.0.5
 streamlit==1.54.0
 tqdm==4.67.3
-pytest==9.0.2
 altair==6.0.0

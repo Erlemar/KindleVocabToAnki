@@ -3,17 +3,32 @@ import streamlit as st
 st.title('Kindle Vocabulary to Anki converter')
 
 text = """
-    This is an app that converts Kindle vocabulary files into a table format that can be imported into Anki.
+This app converts Kindle vocabulary files into a table format that can be imported into Anki.
 
-    You can adjust the app width or enable dark mode in the Settings using the button located in the top right corner.
+### How it works
 
-    To get started, you will need to have the `vocab.db` file from your Kindle device. If you're unsure how to obtain it, follow these steps:
+1. **Upload** your `vocab.db` file (or use sample data)
+2. **Translate** words with Google Translate or OpenAI
+3. **Download** the result as a CSV ready for Anki import
 
-    - Connect your Kindle device to your PC/laptop using a cable.
-    - Copy the vocabulary file `Kindle/system/vocabulary/vocab.db` to your PC/laptop.
+### Getting your vocabulary file
 
-    Please note that this app does not store your data permanently. It is only saved in cache and will be cleared after your session ends.
+- Connect your Kindle device to your PC/laptop using a cable
+- Copy the file from `Kindle/system/vocabulary/vocab.db`
 
-    If you would like more information, you can refer to this blogpost [not written yet]. Project link: https://github.com/Erlemar/KindleVocabToAnki
+### Features
+
+- **Multiple translation backends**: Free Google Translate or higher-quality OpenAI
+- **Context-aware translation**: Uses the sentence context for more accurate translations
+- **Furigana support**: Automatically adds reading annotations for Japanese kanji (OpenAI)
+- **Flexible export**: Choose columns, rename them, add highlight/cloze formatting
+- **Filtering**: Filter by date, book, author, or language before translating
+- **Statistics**: View word count trends, activity heatmaps, and reading stats
+
+### Privacy
+
+This app does not store your data permanently. It is only saved in cache and will be cleared after your session ends.
+
+Project link: https://github.com/Erlemar/KindleVocabToAnki
 """
-st.markdown(text, unsafe_allow_html=True)
+st.markdown(text)

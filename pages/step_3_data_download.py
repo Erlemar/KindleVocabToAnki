@@ -12,7 +12,6 @@ if 'translated_df' in st.session_state and st.session_state.translated_df.shape[
         default=['Word', 'Stem', 'Sentence'] + [col for col in translated_data.columns if 'translated' in col],
         help='Select the columns you want to keep',
     )
-    # TODO process the case when the original sentence isn't selected
 
     my_expander1 = st.expander(label='Rename columns')
     with my_expander1:
@@ -23,7 +22,7 @@ if 'translated_df' in st.session_state and st.session_state.translated_df.shape[
             new_col_names[col] = new_name
     # downloading
     new_data = translated_data[options].rename(columns=new_col_names)
-    # TODO: add cloze deletion
+
     highlight = st.selectbox(
         label='Select highlight options',
         options=(
@@ -37,8 +36,8 @@ if 'translated_df' in st.session_state and st.session_state.translated_df.shape[
         index=0,
         help='separator',
     )
-    if highlight is None:
-        new_data['sentence_with_highlight'] = new_data['Sentence']
+    if highlight == 'None':
+        pass
     elif highlight == 'Replace with underscore':
         new_data['sentence_with_highlight'] = new_data.apply(lambda x: x.Sentence.replace(x.Word, '_'), axis=1)
     elif highlight == 'Surround with [] brackets':
@@ -57,7 +56,16 @@ if 'translated_df' in st.session_state and st.session_state.translated_df.shape[
         new_data['sentence_with_highlight'] = new_data.apply(
             lambda x: x.Sentence.replace(x.Word, '{{c1::' + x.translated_word + '::' + x.Word + '}}'), axis=1
         )
-    st.dataframe(new_data)
+
+    # Preview toggle
+    preview_rows = st.slider(
+        'Preview rows',
+        min_value=5,
+        max_value=new_data.shape[0],
+        value=min(50, new_data.shape[0]),
+        help='Number of rows to display in the preview',
+    )
+    st.dataframe(new_data.head(preview_rows))
 
     st.subheader('Download options')
     keep_header = st.checkbox('Keep header', value=False)
@@ -66,14 +74,24 @@ if 'translated_df' in st.session_state and st.session_state.translated_df.shape[
     date = str(datetime.today().date()).replace('-', '_')
 
     file_name = st.text_input('File name (without extension)', f'anki_table_{date}')
-    st.download_button(
-        label='Press to Download',
-        data=new_data.to_csv(index=False, sep=';', header=keep_header),
-        file_name=f'{file_name}_{date}.csv',
-        mime='text/csv',
-        key='download-csv',
-        help='press m!',
-    )
+
+    csv_data = new_data.to_csv(index=False, sep=sep, header=keep_header)
+
+    col1, col2 = st.columns(2)
+    with col1:
+        st.download_button(
+            label='Press to Download',
+            data=csv_data,
+            file_name=f'{file_name}_{date}.csv',
+            mime='text/csv',
+            key='download-csv',
+            help='Download as CSV file',
+        )
+    with col2:
+        if new_data.shape[0] <= 200:
+            tsv_data = new_data.to_csv(index=False, sep='\t', header=keep_header)
+            st.code(tsv_data, language=None)
+            st.caption('Copy the text above for quick Anki import')
 
 else:
     st.write('You need to translate some data in order to download it.')

@@ -1,11 +1,9 @@
 import datetime
 import sqlite3
 import tempfile
-from io import BytesIO
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pandas as pd
-import pytest
 
 
 def _create_test_db() -> bytes:
@@ -54,7 +52,7 @@ class FakeUploadedFile:
 
 
 @patch('src.utils.st')
-def test_get_data_from_vocab(mock_st):
+def test_get_data_from_vocab():
     """Test that get_data_from_vocab parses a SQLite DB correctly."""
     from src.utils import get_data_from_vocab
 
@@ -86,7 +84,7 @@ def test_get_data_from_vocab_invalid_file(mock_st):
 
 
 @patch('src.utils.st')
-def test_get_data_from_vocab_sorted_by_timestamp(mock_st):
+def test_get_data_from_vocab_sorted_by_timestamp():
     """Test that results are sorted by Timestamp."""
     from src.utils import get_data_from_vocab
 
@@ -115,7 +113,7 @@ def _make_test_df():
 
 @patch('src.utils.stqdm', side_effect=lambda x, **kwargs: x)
 @patch('src.utils.st')
-def test_make_more_columns_google_translate(mock_st, mock_stqdm):
+def test_make_more_columns_google_translate():
     """Test make_more_columns with Google Translate (mocked)."""
     from src.utils import make_more_columns
 
@@ -144,7 +142,7 @@ def test_make_more_columns_google_translate(mock_st, mock_stqdm):
 
 @patch('src.utils.stqdm', side_effect=lambda x, **kwargs: x)
 @patch('src.utils.st')
-def test_make_more_columns_with_context(mock_st, mock_stqdm):
+def test_make_more_columns_with_context():
     """Test make_more_columns with context translation."""
     from src.utils import make_more_columns
 
@@ -184,7 +182,7 @@ def test_init_session_state(mock_st):
 
 
 @patch('src.utils.st')
-def test_estimate_openai_cost(mock_st):
+def test_estimate_openai_cost():
     """Test cost estimation function."""
     from src.utils import estimate_openai_cost
 

@@ -1,11 +1,9 @@
 import datetime
 import sqlite3
 import tempfile
-from io import BytesIO
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pandas as pd
-import pytest
 
 
 def _create_test_db() -> bytes:

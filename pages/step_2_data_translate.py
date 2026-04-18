@@ -108,8 +108,17 @@ if 'loaded_data' in st.session_state and st.session_state.loaded_data.shape[0] >
 
             openai_model = st.selectbox(
                 'OpenAI model',
-                options=['gpt-4o-mini', 'gpt-4o', 'gpt-5.2'],
-                help='gpt-4o-mini is cheapest, gpt-5.2 is highest quality.',
+                options=[
+                    'gpt-4o-mini',
+                    'gpt-4o',
+                    'gpt-4.1-nano',
+                    'gpt-4.1-mini',
+                    'gpt-4.1',
+                    'gpt-5-nano',
+                    'gpt-5-mini',
+                    'gpt-5',
+                ],
+                help='Nano/mini variants are cheapest and fastest; full gpt-4.1 and gpt-5 give the highest quality.',
             )
 
             # Furigana option — only if Japanese data is present

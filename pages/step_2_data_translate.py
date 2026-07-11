@@ -14,12 +14,13 @@ if 'loaded_data' in st.session_state and st.session_state.loaded_data.shape[0] >
     initial_count = data.shape[0]
 
     with my_expander2:
+        st.caption('Filters are applied in the numbered order.')
         # limit the number of rows
         col1_, col2_ = st.columns(2)
         with col1_:
             top_n: int = int(
                 st.number_input(
-                    'Take last N rows',
+                    '1. Take last N rows',
                     min_value=1,
                     max_value=data.shape[0],
                     value=data.shape[0],
@@ -34,7 +35,7 @@ if 'loaded_data' in st.session_state and st.session_state.loaded_data.shape[0] >
         st.caption(f'After row limit: {data.shape[0]} rows (from {initial_count})')
 
         d = st.date_input(
-            label='Starting date',
+            label='2. Starting date',
             value=pd.to_datetime(data['Timestamp']).dt.date.min(),
             min_value=pd.to_datetime(data['Timestamp']).dt.date.min(),
             max_value=pd.to_datetime(data['Timestamp']).dt.date.max(),
@@ -44,13 +45,6 @@ if 'loaded_data' in st.session_state and st.session_state.loaded_data.shape[0] >
         data = data.loc[pd.to_datetime(data['Timestamp']).dt.date >= d]
         if data.shape[0] != before_date:
             st.caption(f'After date filter: {data.shape[0]} rows (removed {before_date - data.shape[0]})')
-
-        # Drop duplicate words
-        drop_dupes = st.checkbox('Drop duplicate words (keep last occurrence)', value=False)
-        if drop_dupes:
-            before_dupes = data.shape[0]
-            data = data.drop_duplicates('Word', keep='last')
-            st.caption(f'After dedup: {data.shape[0]} rows (removed {before_dupes - data.shape[0]} duplicates)')
 
         # select the target language
         langs_list = GoogleTranslator().get_supported_languages()
@@ -137,7 +131,7 @@ if 'loaded_data' in st.session_state and st.session_state.loaded_data.shape[0] >
         )
 
         books = st.multiselect(
-            label='Filter by books',
+            label='3. Filter by books',
             options=data['Book title'].unique(),
             default=data['Book title'].unique(),
             help='Select the books that will be translated',
@@ -149,7 +143,7 @@ if 'loaded_data' in st.session_state and st.session_state.loaded_data.shape[0] >
                 st.caption(f'After book filter: {data.shape[0]} rows (removed {before_books - data.shape[0]})')
 
         authors = st.multiselect(
-            label='Filter by authors',
+            label='4. Filter by authors',
             options=data['Authors'].unique(),
             default=data['Authors'].unique(),
             help='Select the Authors that will be translated',
@@ -161,7 +155,7 @@ if 'loaded_data' in st.session_state and st.session_state.loaded_data.shape[0] >
                 st.caption(f'After author filter: {data.shape[0]} rows (removed {before_authors - data.shape[0]})')
 
         langs_from = st.multiselect(
-            label='Languages to translate',
+            label='5. Languages to translate',
             options=data['Word language'].unique(),
             default=data['Word language'].unique(),
             help='Select the languages that will be translated',
@@ -171,6 +165,13 @@ if 'loaded_data' in st.session_state and st.session_state.loaded_data.shape[0] >
             data = data.loc[data['Word language'].isin(langs_from)]
             if data.shape[0] != before_langs:
                 st.caption(f'After language filter: {data.shape[0]} rows (removed {before_langs - data.shape[0]})')
+
+        # Applied last so toggling it does not change the options of the filters above
+        drop_dupes = st.checkbox('6. Drop duplicate words (keep last occurrence)', value=False)
+        if drop_dupes:
+            before_dupes = data.shape[0]
+            data = data.drop_duplicates('Word', keep='last')
+            st.caption(f'After dedup: {data.shape[0]} rows (removed {before_dupes - data.shape[0]} duplicates)')
 
         st.write(f'{data.shape[0]} texts will be translated (using {translation_backend})')
 

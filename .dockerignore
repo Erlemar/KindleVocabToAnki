@@ -5,7 +5,6 @@
 __pycache__
 *.pyc
 tests/
-data_example/
 short_script.py
 data.csv
 data_to_translate.csv

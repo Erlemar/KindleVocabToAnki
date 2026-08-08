@@ -1,6 +1,7 @@
 import datetime
 import sqlite3
 import tempfile
+import textwrap
 from typing import List, Tuple
 
 import altair as alt
@@ -362,6 +363,54 @@ def estimate_openai_cost(n_words: int, model: str) -> str:
     return f'~${cost:.4f}'
 
 
+LANGUAGE_NAMES = {
+    'ar': 'Arabic',
+    'ca': 'Catalan',
+    'cs': 'Czech',
+    'da': 'Danish',
+    'de': 'German',
+    'el': 'Greek',
+    'en': 'English',
+    'es': 'Spanish',
+    'fi': 'Finnish',
+    'fr': 'French',
+    'he': 'Hebrew',
+    'hi': 'Hindi',
+    'hu': 'Hungarian',
+    'it': 'Italian',
+    'ja': 'Japanese',
+    'ko': 'Korean',
+    'nl': 'Dutch',
+    'no': 'Norwegian',
+    'pl': 'Polish',
+    'pt': 'Portuguese',
+    'ro': 'Romanian',
+    'ru': 'Russian',
+    'sv': 'Swedish',
+    'tr': 'Turkish',
+    'uk': 'Ukrainian',
+    'zh': 'Chinese',
+}
+
+
+def language_name(code: str) -> str:
+    """Turn a Kindle language code like 'de' or 'en-GB' into a readable name."""
+    base = str(code).split('-')[0].split('_')[0].strip().lower()
+    if base in LANGUAGE_NAMES:
+        return LANGUAGE_NAMES[base]
+    if base in ('', 'unknown', 'nan', 'none'):
+        return 'Unknown'
+    return str(code).upper()
+
+
+def is_dark_theme() -> bool:
+    """Best-effort detection of the active Streamlit theme (False outside a runtime)."""
+    try:
+        return st.context.theme.type == 'dark'
+    except Exception:
+        return False
+
+
 def show_vocabulary_stats(df: pd.DataFrame) -> None:
     """
     Show various statistics based on the data.
@@ -372,131 +421,404 @@ def show_vocabulary_stats(df: pd.DataFrame) -> None:
     Returns:
         Nothing
     """
-    df = df.copy()
-    df['date'] = pd.to_datetime(df['Timestamp']).dt.date
-    df['Year-month'] = pd.to_datetime(df['Timestamp']).dt.strftime('%Y-%m')
-
-    # Metrics row 1
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric(label='Word count', value=df.shape[0], help='Total word count in the vocabulary')
-    col2.metric(label='Book count', value=df['Book title'].nunique(), help='Book count in the vocabulary')
-    col3.metric(
-        label='Language count',
-        value=df['Word language'].nunique(),
-        help='Language count in the vocabulary',
+    dark = is_dark_theme()
+    accent = '#7C7CEB' if dark else '#5B5BD6'
+    trend_color = '#F2A33C' if dark else '#D97706'
+    text_color = '#FAFAFA' if dark else '#31333F'
+    surface_color = '#0E1117' if dark else '#FFFFFF'
+    empty_cell_color = '#262B36' if dark else '#EBEDF0'
+    # Single-hue indigo ramp for the calendar, anchored to the surface of each theme
+    calendar_ramp = (
+        ['#3E4283', '#575CB5', '#7A7EE0', '#A3A6F7'] if dark else ['#D9DAF8', '#ADAFF1', '#8285E5', '#5153C8']
     )
-    col4.metric(label='Days with lookups', value=df['date'].nunique(), help='Days with at least one word looked up')
+    # CVD-validated categorical palette (slot 1 is the app accent)
+    category_palette = (
+        [accent, '#D95926', '#199E70', '#C98500', '#D55181']
+        if dark
+        else [accent, '#EB6834', '#1BAF7A', '#EDA100', '#E87BA4']
+    )
+    other_color = '#6B7280' if dark else '#9CA3AF'
 
-    # Metrics row 2
+    def style_chart(chart):
+        """Apply the same quiet, editorial styling to every statistics chart."""
+        return (
+            chart.configure_view(strokeWidth=0)
+            .configure_axis(
+                domain=False,
+                gridOpacity=0.25,
+                labelFontSize=12,
+                labelPadding=8,
+                tickSize=0,
+                titleFontSize=12,
+                titlePadding=12,
+            )
+            .configure_legend(
+                direction='horizontal',
+                labelFontSize=12,
+                orient='bottom',
+                symbolType='square',
+                titleFontSize=12,
+            )
+        )
+
+    def format_days(days: int) -> str:
+        return f'{days:,} day' if days == 1 else f'{days:,} days'
+
+    df = df.copy()
+    df['timestamp'] = pd.to_datetime(df['Timestamp'], errors='coerce')
+    df = df.dropna(subset=['timestamp'])
+    if df.empty:
+        st.info('No dated vocabulary lookups are available for statistics.')
+        return
+
+    df['date'] = df['timestamp'].dt.normalize()
+    df['month'] = df['timestamp'].dt.to_period('M').dt.to_timestamp()
+
+    total_words = len(df)
+    unique_words = df['Word'].nunique()
     active_days = df['date'].nunique()
-    total_words = df.shape[0]
-    avg_per_day = round(total_words / active_days, 1) if active_days > 0 else 0
+    avg_per_active_day = total_words / active_days
+    df['Book title'] = df['Book title'].fillna('Unknown book')
+    book_df = (
+        df.groupby('Book title')
+        .agg(count=('Book title', 'size'), author=('Authors', 'first'))
+        .sort_values('count', ascending=False)
+        .reset_index()
+    )
+    book_df['author'] = book_df['author'].fillna('Unknown author')
+    language_counts = df['Word language'].map(language_name).value_counts()
+    first_date = df['date'].min()
+    latest_date = df['date'].max()
 
     dates_sorted = sorted(df['date'].unique())
     longest_streak = 1
-    current_streak = 1
-    for i in range(1, len(dates_sorted)):
-        if (dates_sorted[i] - dates_sorted[i - 1]).days == 1:
-            current_streak += 1
-            longest_streak = max(longest_streak, current_streak)
+    latest_streak = 1
+    for previous_date, current_date in zip(dates_sorted, dates_sorted[1:]):
+        if (current_date - previous_date).days == 1:
+            latest_streak += 1
+            longest_streak = max(longest_streak, latest_streak)
         else:
-            current_streak = 1
+            latest_streak = 1
 
-    most_active_book = df['Book title'].value_counts().index[0] if len(df) > 0 else 'N/A'
-    date_range = f'{min(dates_sorted)} → {max(dates_sorted)}' if dates_sorted else 'N/A'
+    recent_period_start = latest_date - pd.Timedelta(days=29)
+    recent_words = int(df['date'].between(recent_period_start, latest_date).sum())
 
-    col5, col6, col7, col8 = st.columns(4)
-    col5.metric(label='Avg words/day', value=avg_per_day, help='Average words per active day')
-    col6.metric(label='Longest streak', value=f'{longest_streak} days', help='Consecutive days with lookups')
-    col7.metric(label='Most active book', value=most_active_book[:20], help=most_active_book)
-    col8.metric(label='Date range', value=date_range, help='First and last lookup dates')
+    month_index = pd.date_range(df['month'].min(), df['month'].max(), freq='MS')
+    monthly = df.groupby('month').size().reindex(month_index, fill_value=0).rename('words').reset_index()
+    monthly = monthly.rename(columns={'index': 'month'})
+    monthly['rolling_average'] = monthly['words'].rolling(3, min_periods=1).mean()
+    month_tick_stride = max(1, (len(monthly) + 6) // 7)
+    month_tick_values = monthly['month'].iloc[::month_tick_stride].tolist()
+    if month_tick_values[-1] != monthly['month'].iloc[-1]:
+        month_tick_values.append(monthly['month'].iloc[-1])
 
-    # Cumulative word count over time
-    d = df.groupby('Year-month')['Sentence'].count().sort_index().reset_index()
-    d['count'] = d['Sentence'].cumsum()
-
-    chart = (
-        alt.Chart(d)
-        .mark_line(point=True, strokeWidth=3)
-        .encode(x=alt.X('Year-month:T', timeUnit='yearmonth'), y='count:Q')
-        .configure_point(size=20)
-        .properties(title='Cumulative word count over time')
-        .configure_point(size=50)
-        .interactive()
+    metric_columns = st.columns(4, gap='small')
+    metric_columns[0].metric(
+        label='Lookups',
+        value=f'{total_words:,}',
+        help='Total vocabulary lookups',
+        border=True,
     )
-    st.altair_chart(chart, width='stretch')
+    metric_columns[1].metric(
+        label='Unique words',
+        value=f'{unique_words:,}',
+        help='Distinct words looked up',
+        border=True,
+    )
+    metric_columns[2].metric(
+        label='Active days',
+        value=f'{active_days:,}',
+        help='Days with at least one lookup',
+        border=True,
+    )
+    metric_columns[3].metric(
+        label='Best streak',
+        value=format_days(longest_streak),
+        help='Longest run of consecutive active days',
+        border=True,
+    )
+    st.caption(
+        f'{len(book_df):,} books  ·  {len(language_counts):,} languages  ·  '
+        f'{first_date:%d %b %Y} – {latest_date:%d %b %Y}'
+    )
+    st.caption(
+        f'{recent_words:,} lookups in the latest 30 days  ·  {avg_per_active_day:.1f} avg per active day  ·  '
+        f'Latest streak: {format_days(latest_streak)}'
+    )
 
-    # Words per month bar chart
-    monthly = df.groupby('Year-month')['Sentence'].count().sort_index().reset_index()
-    monthly.columns = ['Year-month', 'count']
-    monthly_chart = (
-        alt.Chart(monthly)
-        .mark_bar()
+    hover = alt.selection_point(fields=['month'], nearest=True, on='pointerover', empty=False)
+    activity_domain = [
+        monthly['month'].min() - pd.Timedelta(days=15),
+        monthly['month'].max() + pd.Timedelta(days=15),
+    ]
+    # Bars on a continuous time scale default to 5px; scale the width to the month count instead
+    bar_size = max(2, min(28, 620 // len(monthly) - 4))
+    activity_base = alt.Chart(monthly).encode(
+        x=alt.X(
+            'month:T',
+            axis=alt.Axis(
+                format='%b %Y',
+                grid=False,
+                labelAngle=0,
+                title=None,
+                values=month_tick_values,
+            ),
+            scale=alt.Scale(domain=activity_domain),
+        )
+    )
+    activity_bars = activity_base.mark_bar(
+        color=accent,
+        cornerRadiusTopLeft=4,
+        cornerRadiusTopRight=4,
+        opacity=0.82,
+        size=bar_size,
+    ).encode(
+        y=alt.Y('words:Q', axis=alt.Axis(format=',d', tickCount=5, title=None), scale=alt.Scale(zero=True)),
+        tooltip=[
+            alt.Tooltip('month:T', format='%B %Y', title='Month'),
+            alt.Tooltip('words:Q', format=',d', title='Lookups'),
+        ],
+    )
+    # An explicit axis=None on any layer would suppress the shared y-axis, so only hide titles here
+    rolling_line = activity_base.mark_line(color=trend_color, strokeWidth=2.5).encode(
+        y=alt.Y('rolling_average:Q', title=None)
+    )
+    rolling_points = activity_base.mark_point(color=trend_color, filled=True, size=65).encode(
+        y=alt.Y('rolling_average:Q', title=None),
+        opacity=alt.condition(hover, alt.value(1), alt.value(0)),
+    )
+    hover_rule = activity_base.mark_rule(color=accent).encode(
+        opacity=alt.condition(hover, alt.value(0.28), alt.value(0)),
+        tooltip=[
+            alt.Tooltip('month:T', format='%B %Y', title='Month'),
+            alt.Tooltip('words:Q', format=',d', title='Lookups'),
+            alt.Tooltip('rolling_average:Q', format='.1f', title='3-month average'),
+        ],
+    )
+    hover_target = (
+        activity_base.mark_point(opacity=0, size=400).encode(y=alt.Y('words:Q', title=None)).add_params(hover)
+    )
+    latest_month_label = (
+        alt.Chart(monthly.tail(1))
+        .mark_text(align='right', color=accent, dx=-4, dy=-9, fontWeight=600)
+        .encode(x='month:T', y=alt.Y('words:Q', title=None), text=alt.Text('words:Q', format=','))
+    )
+    activity_chart = style_chart(
+        (activity_bars + rolling_line + rolling_points + hover_rule + hover_target + latest_month_label).properties(
+            height=300
+        )
+    )
+
+    activity_caption = 'Bars show lookups; the line shows the three-month average.'
+    if latest_date < latest_date + pd.offsets.MonthEnd(0):
+        activity_caption += f' The last month is partial (data through {latest_date:%d %b}).'
+    st.markdown('#### Monthly activity')
+    st.caption(activity_caption)
+    st.altair_chart(activity_chart, width='stretch')
+
+    window_start = max(latest_date - pd.Timedelta(days=364), first_date)
+    window_start -= pd.Timedelta(days=window_start.weekday())
+    calendar_dates = pd.date_range(window_start, latest_date, freq='D')
+    daily_counts = df.groupby('date').size()
+    calendar = pd.DataFrame({'date': calendar_dates})
+    calendar['count'] = calendar['date'].map(daily_counts).fillna(0).astype(int)
+    calendar['week_start'] = calendar['date'] - pd.to_timedelta(calendar['date'].dt.dayofweek, unit='D')
+    calendar['week_end'] = calendar['week_start'] + pd.Timedelta(days=6)
+    day_names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    calendar['day_name'] = calendar['date'].dt.dayofweek.map(dict(enumerate(day_names)))
+
+    calendar_chart = (
+        alt.Chart(calendar)
+        .mark_rect(cornerRadius=2)
         .encode(
-            x=alt.X('Year-month:T', timeUnit='yearmonth', title='Month'),
-            y=alt.Y('count:Q', title='Words'),
+            x=alt.X(
+                'week_start:T',
+                axis=alt.Axis(
+                    format='%b',
+                    grid=False,
+                    labelAngle=0,
+                    tickCount='month',
+                    title=None,
+                ),
+            ),
+            x2='week_end:T',
+            y=alt.Y(
+                'day_name:O',
+                axis=alt.Axis(grid=False, title=None),
+                scale=alt.Scale(paddingInner=0.16, paddingOuter=0.04),
+                sort=day_names,
+            ),
+            # Days with zero lookups get a neutral cell so they never blend into the activity ramp
+            color=alt.condition(
+                'datum.count === 0',
+                alt.value(empty_cell_color),
+                alt.Color(
+                    'count:Q',
+                    legend=None,
+                    scale=alt.Scale(
+                        domain=[1, max(2, int(calendar['count'].max()))],
+                        range=calendar_ramp,
+                        type='quantize',
+                    ),
+                ),
+            ),
             tooltip=[
-                alt.Tooltip('Year-month:T', timeUnit='yearmonth', title='Month'),
-                alt.Tooltip('count:Q', title='Words'),
+                alt.Tooltip('date:T', format='%A, %d %B %Y', title='Date'),
+                alt.Tooltip('count:Q', format=',d', title='Lookups'),
             ],
         )
-        .properties(title='Words per month')
-        .interactive()
     )
-    st.altair_chart(monthly_chart, width='stretch')
+    # Keep the cells roughly square: height follows the number of weeks in the window
+    n_weeks = max(1, round(len(calendar_dates) / 7))
+    cell_width = 620 / n_weeks * (6 / 7)
+    calendar_height = int(min(170, max(92, cell_width * 7 / 0.84)))
+    calendar_chart = style_chart(calendar_chart.properties(height=calendar_height))
+    st.markdown('#### Activity calendar')
+    st.caption(f'{window_start:%d %b %Y} – {latest_date:%d %b %Y}  ·  Darker cells mean more lookups.')
+    st.altair_chart(calendar_chart, width='stretch')
 
-    # Language distribution
-    lang_df = df['Word language'].value_counts().reset_index()
-    lang_df.columns = ['Language', 'count']
-    lang_chart = (
-        alt.Chart(lang_df)
-        .mark_bar()
-        .encode(
-            x=alt.X('count:Q', title='Words'),
-            y=alt.Y('Language:N', sort='-x', title='Language'),
-            tooltip=['Language', 'count'],
-        )
-        .properties(title='Words per language')
-        .interactive()
+    hours = (
+        df['timestamp']
+        .dt.hour.value_counts()
+        .reindex(range(24), fill_value=0)
+        .rename_axis('hour')
+        .reset_index(name='count')
     )
-    st.altair_chart(lang_chart, width='stretch')
+    hours['hour_label'] = hours['hour'].map(lambda hour: f'{hour:02d}:00')
+    peak_hour = int(hours.loc[hours['count'].idxmax(), 'hour'])
+    hour_chart = (
+        alt.Chart(hours)
+        .mark_bar(color=accent, cornerRadiusTopLeft=3, cornerRadiusTopRight=3)
+        .encode(
+            x=alt.X(
+                'hour_label:O',
+                axis=alt.Axis(
+                    grid=False,
+                    labelAngle=0,
+                    title=None,
+                    values=[f'{hour:02d}:00' for hour in range(0, 24, 3)],
+                ),
+                scale=alt.Scale(paddingInner=0.25),
+                sort=hours['hour_label'].tolist(),
+            ),
+            y=alt.Y('count:Q', axis=alt.Axis(format=',d', tickCount=4, title=None)),
+            opacity=alt.condition(f'datum.hour === {peak_hour}', alt.value(1), alt.value(0.55)),
+            tooltip=[
+                alt.Tooltip('hour_label:N', title='Hour'),
+                alt.Tooltip('count:Q', format=',d', title='Lookups'),
+            ],
+        )
+    )
+    hour_chart = style_chart(hour_chart.properties(height=220))
+    st.markdown('#### When you read')
+    st.caption(f'Lookups by hour of day (device time)  ·  Most lookups happen around {peak_hour:02d}:00.')
+    st.altair_chart(hour_chart, width='stretch')
 
-    # Words per book (all books)
-    book_df = df['Book title'].value_counts().reset_index()
-    book_df.columns = ['Book title', 'count']
-    book_chart = (
-        alt.Chart(book_df)
-        .mark_bar()
-        .encode(
-            x=alt.X('count:Q', title='Words'),
-            y=alt.Y('Book title:N', sort='-x', title=None, axis=alt.Axis(labelLimit=300)),
-            tooltip=['Book title', 'count'],
+    top_books = book_df.head(8).copy()
+    top_books['display_title'] = top_books['Book title'].map(
+        lambda title: '|'.join(
+            textwrap.wrap(
+                title,
+                width=52,
+                break_long_words=False,
+                break_on_hyphens=False,
+            )
         )
-        .properties(title='Words per book', height=max(200, len(book_df) * 20))
-        .interactive()
     )
+    max_book_label_lines = top_books['display_title'].str.count(r'\|').max() + 1
+    book_domain_max = max(top_books['count'].max() * 1.18, 1)
+    book_base = alt.Chart(top_books).encode(
+        y=alt.Y(
+            'display_title:N',
+            axis=alt.Axis(
+                grid=False,
+                labelExpr="split(datum.label, '|')",
+                labelLimit=520,
+                labelLineHeight=14,
+                title=None,
+            ),
+            sort=alt.EncodingSortField(field='count', order='descending'),
+        ),
+        tooltip=[
+            alt.Tooltip('Book title:N', title='Book'),
+            alt.Tooltip('author:N', title='Author'),
+            alt.Tooltip('count:Q', format=',d', title='Lookups'),
+        ],
+    )
+    book_bars = book_base.mark_bar(
+        color=accent,
+        cornerRadiusBottomRight=4,
+        cornerRadiusTopRight=4,
+        size=20,
+    ).encode(
+        x=alt.X(
+            'count:Q',
+            axis=alt.Axis(format=',d', tickCount=4, title=None),
+            scale=alt.Scale(domain=[0, book_domain_max]),
+        )
+    )
+    book_labels = book_base.mark_text(align='left', color=text_color, dx=7).encode(
+        x=alt.X('count:Q', scale=alt.Scale(domain=[0, book_domain_max])),
+        text=alt.Text('count:Q', format=','),
+    )
+    book_chart = style_chart(
+        (book_bars + book_labels).properties(
+            height=max(240, len(top_books) * max(36, max_book_label_lines * 14 + 12)),
+        )
+    )
+
+    st.markdown('#### Top books')
+    st.caption(f'The {len(top_books)} books with the most lookups.')
     st.altair_chart(book_chart, width='stretch')
+    if len(book_df) > len(top_books):
+        with st.expander(f'All {len(book_df):,} books'):
+            st.dataframe(
+                book_df.rename(columns={'count': 'Lookups', 'author': 'Author'})[['Book title', 'Author', 'Lookups']],
+                column_config={'Lookups': st.column_config.NumberColumn(format='%d')},
+                hide_index=True,
+                width='stretch',
+            )
 
-    # Daily activity heatmap
-    daily = df.groupby('date').size().reset_index(name='count')
-    daily['date'] = pd.to_datetime(daily['date'])
-    daily['weekday'] = daily['date'].dt.dayofweek
-    daily['week'] = daily['date'].dt.isocalendar().week.astype(int)
-    daily['year'] = daily['date'].dt.year
-    daily['year_week'] = daily['year'].astype(str) + '-W' + daily['week'].astype(str).str.zfill(2)
-
-    day_names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-    daily['day_name'] = daily['weekday'].map(lambda x: day_names[x])
-
-    heatmap = (
-        alt.Chart(daily)
-        .mark_rect()
+    language_df = language_counts.rename_axis('Language').reset_index(name='count')
+    language_df['share'] = language_df['count'] / language_df['count'].sum()
+    # The chart shows at most 5 languages plus an "Other" bucket so colors stay distinguishable
+    chart_languages = language_df.head(5).copy()
+    if len(language_df) > 5:
+        chart_languages.loc[len(chart_languages)] = {
+            'Language': 'Other',
+            'count': int(language_df['count'].iloc[5:].sum()),
+            'share': float(language_df['share'].iloc[5:].sum()),
+        }
+    chart_languages['rank'] = range(len(chart_languages))
+    chart_languages['group'] = 'Vocabulary'
+    palette = category_palette[: len(chart_languages)]
+    if len(language_df) > 5:
+        palette = category_palette[:5] + [other_color]
+    language_chart = (
+        alt.Chart(chart_languages)
+        .mark_bar(cornerRadius=4, size=28, stroke=surface_color, strokeWidth=2)
         .encode(
-            x=alt.X('year_week:O', title='Week', axis=alt.Axis(labels=False)),
-            y=alt.Y('day_name:O', title='Day', sort=day_names),
-            color=alt.Color('count:Q', scale=alt.Scale(scheme='greens'), title='Words'),
-            tooltip=[alt.Tooltip('date:T', title='Date'), alt.Tooltip('count:Q', title='Words')],
+            x=alt.X('share:Q', axis=None, scale=alt.Scale(domain=[0, 1]), stack='zero'),
+            y=alt.Y('group:N', axis=None),
+            color=alt.Color(
+                'Language:N',
+                legend=alt.Legend(columns=min(len(chart_languages), 4), labelLimit=180, title=None),
+                scale=alt.Scale(domain=chart_languages['Language'].tolist(), range=palette),
+            ),
+            order=alt.Order('rank:O'),
+            tooltip=[
+                alt.Tooltip('Language:N', title='Language'),
+                alt.Tooltip('count:Q', format=',d', title='Lookups'),
+                alt.Tooltip('share:Q', format='.1%', title='Share'),
+            ],
         )
-        .properties(title='Daily activity heatmap', height=150)
     )
-    st.altair_chart(heatmap, width='stretch')
+    language_chart = style_chart(language_chart.properties(height=90))
+
+    st.markdown('#### Languages')
+    st.caption('Share of vocabulary lookups.')
+    st.altair_chart(language_chart, width='stretch')
+    language_summary = '  ·  '.join(
+        f'{row.Language} {row.count:,} ({row.share:.0%})' for row in language_df.itertuples(index=False)
+    )
+    st.caption(language_summary)
